@@ -6,67 +6,79 @@ import java.util.Random;
 
 public class RegionGenerator
 {
-	// generates regions by spreading random points and "growing" them until all possile pixels are owned by a region
+	// generates regions by spreading random points and "growing" them until all possible pixels are owned by a region
 	// regions should not cross rivers unless necessary
-	public static int[][] generateRegions(double[][] data, int[][] rivers, double seaLevel, int seed)
+	public static int[][] generateRegions(double[][] data, int[][] basins, int[][] rivers, double seaLevel, int seed)
 	{
-		int regionDensity = 30;
+		int regionDensity = 20;
 
 		int width = data.length;
-        int height = data[0].length;
+		int height = data[0].length;
 
-        int regionCount = 1;
+		int regionCount = 1;
 
-        int[][] regions = new int[width][height];
+		int[][] regions = new int[width][height];
 
-        // the lower the density, the lower the region count
-        // this method will create nice uniform grids for regions over the water
-        for(int x = width / regionDensity; x < width; x = x+=(width / regionDensity))
-    	{
-    		for(int y = width / regionDensity; y < height; y+=(width / regionDensity))
-    		{
-    			if(data[x][y] <= seaLevel)
-    			{
-    				regions[x][y] = regionCount;
-    				regionCount++;
-    			}
-    		}
-		}
-
-        // random point method
-        // the lower the density the higher the region count, for terrestrial regions
-        Random rand = new Random(seed);
-        while(regionCount < (width / regionDensity) * (height / regionDensity))
+		// the lower the density, the lower the region count
+		// this method will create nice uniform grids for regions over the water
+		for(int x = width / regionDensity; x < width; x = x+=(width / regionDensity))
 		{
-        	int x = rand.nextInt(width - 1);
-        	int y = rand.nextInt(height - 1);
-
-        	if(rivers[x][y] != 1 && data[x][y] > seaLevel)
-        	{
-        		regions[x][y] = regionCount;
-        		regionCount++;
-        	}
+			for(int y = width / regionDensity; y < height; y+=(width / regionDensity))
+			{
+				if(data[x][y] <= seaLevel)
+				{
+					regions[x][y] = regionCount;
+					regionCount++;
+				}
+			}
 		}
 
-        // we have a grid of regions established, now they need to "grow". ensure we stop at rivers and heights
-        regions = generationPass(regions, width, height, data, seaLevel, rivers, 0.125, true, seed);
-        // cleanup any little dangles, grow into any double-river spaces
-        regions = generationPass(regions, width, height, data, seaLevel, rivers, 1.0, false, seed);
-        // regions are now defined, but there may be some leftover space that isn't assigned yet, particularly random islands
-        for(int x = 0; x < width; x++)
-    	{
-    		for(int y = 0; y < height; y++)
-    		{
-    			if(regions[x][y] == 0)
-    			{
-    				Point closestRegionPoint = getClosestRegionPoint(regions, data, new Point(x, y), seaLevel, 100000);
-    				int region = regions[closestRegionPoint.getX()][closestRegionPoint.getY()];
-    				regions[x][y] = region;
-    			}
-    		}
+		// random point method
+		// the lower the density the higher the region count, for terrestrial regions
+		Random rand = new Random(seed);
+		while(regionCount < (width / regionDensity) * (height / regionDensity))
+		{
+			int x = rand.nextInt(width - 1);
+			int y = rand.nextInt(height - 1);
+
+			if(rivers[x][y] != 1 && data[x][y] > seaLevel)
+			{
+				regions[x][y] = regionCount;
+				regionCount++;
+			}
 		}
 
-        return regions;
+		// we have a grid of regions established, now they need to "grow". ensure we stop at rivers and heights
+		regions = generationPass(regions, width, height, data, seaLevel, rivers, 0.125, true, seed);
+		// cleanup any little dangles, grow into any double-river spaces
+		regions = generationPass(regions, width, height, data, seaLevel, rivers, 1.0, false, seed);
+		// regions are now defined, but there may be some leftover space that isn't assigned yet, particularly random islands
+		for(int x = 0; x < width; x++)
+		{
+			for(int y = 0; y < height; y++)
+			{
+				if(regions[x][y] == 0)
+				{
+					if(data[x][y] <= seaLevel && basins[x][y] != 1)
+					{
+						regions[x][y] = regionCount;
+						regionCount++;
+						regions = generationPass(regions, width, height, data, seaLevel, rivers, 1.0, false, seed);
+					}
+					else
+					{
+						Point closestRegionPoint = getClosestRegionPoint(regions, data, new Point(x, y), seaLevel, 100000);
+						if(closestRegionPoint != null)
+						{
+							int region = regions[closestRegionPoint.getX()][closestRegionPoint.getY()];
+							regions[x][y] = region;
+						}
+					}
+				}
+			}
+		}
+
+		return regions;
 	}
 
 	private static int[][] generationPass(int[][] regions, int width, int height, double[][] data, double seaLevel, int[][] rivers, double heightTolerance, boolean blockOnRivers, int seed)
@@ -74,75 +86,70 @@ public class RegionGenerator
 		boolean regionsGrown = true;
 		Random rand = new Random(seed);
 
-        while(regionsGrown)
-        {
-        	int[][] tempRegions = new int[width][height];
+		while(regionsGrown)
+		{
+			int[][] tempRegions = new int[width][height];
 
-        	int regionGrowth = 0;
-	        for(int x = 0; x < width; x++)
-	    	{
-	    		for(int y = 0; y < height; y++)
-	    		{
-	    			// test if we found a region chunk
-	    			if(regions[x][y] != 0)
-	    			{
-	    				// grow into all availble neighbours that are below a talus angle, and not water.
-	    				// If ocean, just grow till you hit coastline or another region
-	    				boolean isOcean = data[x][y] <= seaLevel;
+			int regionGrowth = 0;
+			for(int x = 0; x < width; x++)
+			{
+				for(int y = 0; y < height; y++)
+				{
+					// test if we found a region chunk
+					if(regions[x][y] != 0)
+					{
+						// grow into all availAble neighbours that are below a talus angle, and not water.
+						// If ocean, just grow till you hit coastline or another region
+						boolean isOcean = data[x][y] <= seaLevel;
 
-	    				List<Point> neighbours = new ArrayList<Point>();
+						List<Point> neighbours = new ArrayList<Point>();
 
-	    				//neighbours.add(y == 0 ? null : x == 0 ? new Point(width - 1, y - 1) : new Point(x - 1,y - 1));
-	    				neighbours.add(y == 0 ? null : new Point(x,y - 1));
-	    				//neighbours.add(y == 0 ? null : x == width - 1 ? new Point(0,y - 1) : new Point(x + 1,y - 1));
-	    				neighbours.add(x == width - 1 ? new Point(0,y) : new Point(x + 1,y));
-	    				//neighbours.add(y == height - 1 ? null : x == width - 1 ? new Point(0,y + 1) : new Point(x + 1,y + 1));
-	    				neighbours.add(y == height - 1 ? null : new Point(x,y + 1));
-	    				//neighbours.add(y == height - 1 ? null : x == 0 ? new Point(width - 1,y + 1) : new Point(x - 1,y + 1));
-	    				neighbours.add(x == 0 ? new Point(width - 1,y) : new Point(x - 1, y));
+						neighbours.add(y == 0 ? null : new Point(x,y - 1));
+						neighbours.add(x == width - 1 ? new Point(0,y) : new Point(x + 1,y));
+						neighbours.add(y == height - 1 ? null : new Point(x,y + 1));
+						neighbours.add(x == 0 ? new Point(width - 1,y) : new Point(x - 1, y));
 
-	    				for(Point p : neighbours)
-	    				{
-	    					if(p != null && regions[p.getX()][p.getY()] == 0 && tempRegions[p.getX()][p.getY()] == 0)
-	    					{
-		    					if(isOcean && data[p.getX()][p.getY()] <= seaLevel)
-		    					{
-		    						tempRegions[p.getX()][p.getY()] = regions[x][y];
-		    						regionGrowth++;
-		    					}
-		    					else if(!isOcean && data[p.getX()][p.getY()] > seaLevel)
-		    					{
-		    						if(((blockOnRivers && rivers[p.getX()][p.getY()] == 0) || !blockOnRivers) && rand.nextBoolean())
-		    						{
-		    							// get the height difference between these points. If the difference is too big, we can't grow.
-			    						double difference = data[p.getX()][p.getY()] - data[x][y];
+						for(Point p : neighbours)
+						{
+							if(p != null && regions[p.getX()][p.getY()] == 0 && tempRegions[p.getX()][p.getY()] == 0)
+							{
+								if(isOcean && data[p.getX()][p.getY()] <= seaLevel)
+								{
+									tempRegions[p.getX()][p.getY()] = regions[x][y];
+									regionGrowth++;
+								}
+								else if(!isOcean && data[p.getX()][p.getY()] > seaLevel)
+								{
+									if(((blockOnRivers && rivers[p.getX()][p.getY()] == 0) || !blockOnRivers) && rand.nextBoolean())
+									{
+										// get the height difference between these points. If the difference is too big, we can't grow.
+										double difference = data[p.getX()][p.getY()] - data[x][y];
 
-		    							if(difference < heightTolerance)
-		    							{
-		    								tempRegions[p.getX()][p.getY()] = regions[x][y];
-		    								regionGrowth++;
-		    							}
-		    						}
-		    					}
-	    					}
-	    				}
-
-	    			}
-	    		}
+										if(difference < heightTolerance)
+										{
+											tempRegions[p.getX()][p.getY()] = regions[x][y];
+											regionGrowth++;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 
-	        for(int x = 0; x < width; x++)
-	    	{
-	    		for(int y = 0; y < height; y++)
-	    		{
-	    			if(tempRegions[x][y] != 0) regions[x][y] = tempRegions[x][y];
-	    		}
-    		}
+			for(int x = 0; x < width; x++)
+			{
+				for(int y = 0; y < height; y++)
+				{
+					if(tempRegions[x][y] != 0) regions[x][y] = tempRegions[x][y];
+				}
+			}
 
-	        regionsGrown = regionGrowth > 0;
-        }
+			regionsGrown = regionGrowth > 0;
+		}
 
-        return regions;
+		return regions;
 	}
 
 	private static Point getClosestRegionPoint(int[][] regionData, double[][] noiseData, Point point, double sealLevel, int tolerance)
@@ -151,9 +158,9 @@ public class RegionGenerator
 		boolean foundRegion = false;
 
 		int width = regionData.length;
-        int height = regionData[0].length;
+		int height = regionData[0].length;
 
-        int loops = 0;
+		int loops = 0;
 		while(!foundRegion)
 		{
 			if(loops > tolerance) break; // we've been searching for a while and never found a destination?
@@ -185,6 +192,6 @@ public class RegionGenerator
 			loops++;
 		}
 
-
 		return destination;
 	}
+}

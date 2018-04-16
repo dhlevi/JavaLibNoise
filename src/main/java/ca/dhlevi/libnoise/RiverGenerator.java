@@ -5,7 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
-public class RiverGenerator 
+public class RiverGenerator
 {
 	// River flow algorithm by starting from a random point and moving "down" until they hit water, a river, or can no longer move
 	// works with some noise, but not as reliable as the a* approach
@@ -15,34 +15,34 @@ public class RiverGenerator
         int height = data[0].length;
 
         int[][] rivers = new int[width][height];
-        
+
         Random rand = new Random(seed);
-        
+
         for (int i = 0; i < iterations; i++)
         {
         	// get a random starting point for a river. It must be on land, obviously
         	Point currentPoint = null;
-        	boolean riverComplete = false; 
+        	boolean riverComplete = false;
         	boolean tributary = false;
         	int riverLength = 0;
         	List<Point> riverPoints = new ArrayList<Point>();
-        	
+
 			while(currentPoint == null)
 			{
 				int x = rand.nextInt(width);
 				int y = rand.nextInt(height);
-				
+
 				if(data[x][y] > seaLevel && rivers[x][y] == 0)
 				{
 					currentPoint = new Point(x, y);
 				}
 			}
-        	
+
 			while(!riverComplete)
 			{
 				int x = currentPoint.getX();
 				int y = currentPoint.getY();
-				
+
                 // neighbouring height values
                 // if we're on an e/w edge, loop around the map. North and south do not loop.
 
@@ -67,13 +67,13 @@ public class RiverGenerator
                 flows.add(new Pair<Integer, Double>(8, se));
 
                 flows.sort(Comparator.comparing(Pair::getValue));
-                
+
                 boolean riverGrew = false;
-                
+
                 for(Pair<Integer, Double> slope : flows)
                 {
                 	Point nextPoint = null;
-                	
+
                 	if (slope.getKey() == 1) nextPoint = new Point(x > 0 ? x - 1 : width - 1, y > 0 ? y - 1 : 0);
                     else if (slope.getKey() == 2) nextPoint = new Point(x, y > 0 ? y - 1 : 0);
                     else if (slope.getKey() == 3) nextPoint = new Point(x < width - 1 ? x + 1 : 0, y > 0 ? y - 1 : 0);
@@ -86,17 +86,17 @@ public class RiverGenerator
 	            	if(nextPoint != null & nextPoint.getX() != currentPoint.getX() && nextPoint.getY() != currentPoint.getY())
 	            	{
 	            		rivers[currentPoint.getX()][currentPoint.getY()] = 1;
-	            		riverPoints.add(new Point(currentPoint.getX(), currentPoint.getY()));		
+	            		riverPoints.add(new Point(currentPoint.getX(), currentPoint.getY()));
 	            		riverLength++;
 	            		riverGrew = true;
 	            		currentPoint = nextPoint;
-	            		
-	            		if(rivers[currentPoint.getX()][currentPoint.getY()] == 1) 
+
+	            		if(rivers[currentPoint.getX()][currentPoint.getY()] == 1)
             			{
 	            			riverComplete = true;
 	            			tributary = true;
             			}
-	            		
+
 	            		break;
 	            	}
                 }
@@ -120,7 +120,7 @@ public class RiverGenerator
                 	}
                 }
 			}
-			
+
             if(riverLength < minimumLength && tributary == false)
             {
          	   // not a river, toss the data?
@@ -131,10 +131,10 @@ public class RiverGenerator
             	i--;
             }
         }
-        
+
         return rivers;
     }
-	
+
 	// Not a true a*, but a close approach. Generates rivers by targeting a random start point and finding the closest
 	// water source. Because the algorith and heuristic is a little looser than a* would allow for, some extra checks
 	// are included to cancel out any rivers that would be excessive in length
@@ -145,30 +145,32 @@ public class RiverGenerator
 
         Random rand = new Random(seed);
         int[][] rivers = new int[width][height];
-        
+
         for(int i = 0; i < maxRivers; i++)
         {
         	Point startPoint = null;
         	Point currentPoint = null;
         	List<Point> riverPoints = new ArrayList<Point>();
-        	
+
         	// get a random starting point
 			while(startPoint == null)
 			{
 				int x = rand.nextInt(width);
 				int y = rand.nextInt(height);
-				
+
 				if(grid[x][y] > seaLevel && rivers[x][y] == 0)
 				{
 					startPoint = new Point(x, y);
 					currentPoint = new Point(x, y);
 				}
 			}
-			
+
 			// get a destination point (the closest sea level)
 			Point destinationPoint = getClosestWaterPoint(grid, startPoint, seaLevel, 100000);
 			boolean destinationFound = false;
-			
+
+			if(destinationPoint == null) destinationFound = true;
+
 			while(!destinationFound)
 			{
 				if(currentPoint == null)
@@ -183,13 +185,13 @@ public class RiverGenerator
 					destinationFound = true;
 					break;
 				}
-				
+
 				// if we're not, we need to find the next best path
-				// get all neighbours. The closest neighbour with the 
+				// get all neighbours. The closest neighbour with the
 				int x = currentPoint.getX();
 				int y = currentPoint.getY();
 				List<Point> neighbours = new ArrayList<Point>();
-				
+
 				neighbours.add(y == 0 ? null : x == 0 ? new Point(width - 1, y - 1) : new Point(x - 1,y - 1));
 				neighbours.add(y == 0 ? null : new Point(x,y - 1));
 				neighbours.add(y == 0 ? null : x == width - 1 ? new Point(0,y - 1) : new Point(x + 1,y - 1));
@@ -197,8 +199,8 @@ public class RiverGenerator
 				neighbours.add(y == height - 1 ? null : x == width - 1 ? new Point(0,y + 1) : new Point(x + 1,y + 1));
 				neighbours.add(y == height - 1 ? null : new Point(x,y + 1));
 				neighbours.add(y == height - 1 ? null : x == 0 ? new Point(width - 1,y + 1) : new Point(x - 1,y + 1));
-				neighbours.add(x == 0 ? new Point(width - 1,y) : new Point(x - 1, y));                
-				
+				neighbours.add(x == 0 ? new Point(width - 1,y) : new Point(x - 1, y));
+
 				// get the valid points to test
 				Point bestPoint = null;
 				double bestScore = 0;
@@ -209,8 +211,8 @@ public class RiverGenerator
                 		// get the points score
                 		double distance = Math.hypot(p.getX() - destinationPoint.getX(), p.getY() - destinationPoint.getY());
                 		double heightValue = grid[p.getX()][p.getY()];
-                		double score = heightValue + (distance / 200); // distance + heightValue;
-                		
+                		double score = heightValue + (distance / 300); // distance + heightValue;
+
                 		if(bestPoint == null || score < bestScore)
                 		{
                 			bestScore = score;
@@ -218,9 +220,9 @@ public class RiverGenerator
                 		}
                 	}
                 }
-                
+
                 currentPoint = bestPoint;
-                
+
                 // have we inadvertently hit another waterbody?
                 if(grid[currentPoint.getX()][currentPoint.getY()] <= seaLevel)
                 {
@@ -228,7 +230,7 @@ public class RiverGenerator
                 	riverPoints.add(currentPoint);
 					break;
                 }
-                
+
                 // have we collided with an existing river?
                 if(rivers[currentPoint.getX()][currentPoint.getY()] == 1)
                 {
@@ -236,14 +238,14 @@ public class RiverGenerator
                 	riverPoints.add(currentPoint);
 					break;
                 }
-                		
+
                 // are we seemingly lost in space?
-                if(riverPoints.size() > width / 2)
+                if(riverPoints.size() > width)
                 {
                 	currentPoint = null;
                 }
 			}
-			
+
 			if(riverPoints.size() > 25)
 			{
 				for(Point p : riverPoints)
@@ -252,23 +254,23 @@ public class RiverGenerator
             	}
 			}
         }
-        
+
         return rivers;
 	}
-	
+
 	private static Point getClosestWaterPoint(double[][] grid, Point point, double seaLevel, int tolerance)
 	{
 		Point destination = null;
 		boolean foundWater = false;
-		
+
 		int width = grid.length;
         int height = grid[0].length;
-        
+
         int loops = 0;
 		while(!foundWater)
 		{
 			if(loops > tolerance) break; // we've been searching for a while and never found a destination?
-			
+
 			for(int y = point.getY() - loops; y < point.getY() + loops && y < height - 1; y++)
 			{
 				for(int x = point.getX() - loops; x < point.getX() + loops && x < width - 1; x++)
@@ -278,25 +280,25 @@ public class RiverGenerator
 					if(x >= width - 1) x = width - 1;
 					if(y < 0) y = 0;
 					if(y >= height - 1) y = height - 1;
-					
+
 					if(grid[x][y] <= seaLevel)
 					{
 						destination = new Point(x, y);
 						foundWater = true;
 						break;
 					}
-					
+
 					if(y > point.getY() - loops && y < point.getY() + loops - 1)
 					{
 						x = point.getX() + loops;
 					}
 				}
 			}
-			
+
 			loops++;
 		}
-		
-		
+
+
 		return destination;
 	}
 }
