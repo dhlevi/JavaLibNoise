@@ -8,7 +8,7 @@ public class RegionGenerator
 {
 	// generates regions by spreading random points and "growing" them until all possile pixels are owned by a region
 	// regions should not cross rivers unless necessary
-public static int[][] generateRegions(double[][] data, int[][] rivers, double seaLevel, int seed)
+	public static int[][] generateRegions(double[][] data, int[][] rivers, double seaLevel, int seed)
 	{
 		int regionDensity = 30;
 
@@ -19,15 +19,29 @@ public static int[][] generateRegions(double[][] data, int[][] rivers, double se
 
         int[][] regions = new int[width][height];
 
+        // the lower the density, the lower the region count
+        // this method will create nice uniform grids for regions over the water
+        for(int x = width / regionDensity; x < width; x = x+=(width / regionDensity))
+    	{
+    		for(int y = width / regionDensity; y < height; y+=(width / regionDensity))
+    		{
+    			if(data[x][y] <= seaLevel)
+    			{
+    				regions[x][y] = regionCount;
+    				regionCount++;
+    			}
+    		}
+		}
+
         // random point method
-        // the lower the density the higher the region count
+        // the lower the density the higher the region count, for terrestrial regions
         Random rand = new Random(seed);
         while(regionCount < (width / regionDensity) * (height / regionDensity))
 		{
         	int x = rand.nextInt(width - 1);
         	int y = rand.nextInt(height - 1);
 
-        	if(rivers[x][y] != 1)
+        	if(rivers[x][y] != 1 && data[x][y] > seaLevel)
         	{
         		regions[x][y] = regionCount;
         		regionCount++;
@@ -64,7 +78,6 @@ public static int[][] generateRegions(double[][] data, int[][] rivers, double se
         {
         	int[][] tempRegions = new int[width][height];
 
-        	// random variable to add some noise to terrestrial regions
         	int regionGrowth = 0;
 	        for(int x = 0; x < width; x++)
 	    	{
@@ -73,9 +86,6 @@ public static int[][] generateRegions(double[][] data, int[][] rivers, double se
 	    			// test if we found a region chunk
 	    			if(regions[x][y] != 0)
 	    			{
-	    				if(regions[x][y] == 1)
-	    					{String stop = "me";}
-
 	    				// grow into all availble neighbours that are below a talus angle, and not water.
 	    				// If ocean, just grow till you hit coastline or another region
 	    				boolean isOcean = data[x][y] <= seaLevel;
@@ -178,4 +188,3 @@ public static int[][] generateRegions(double[][] data, int[][] rivers, double se
 
 		return destination;
 	}
-}
