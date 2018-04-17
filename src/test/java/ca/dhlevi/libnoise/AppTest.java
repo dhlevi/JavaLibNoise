@@ -42,27 +42,28 @@ public class AppTest
      */
     public void testApp() throws Exception
     {
-    	int seed = new Date().getDay() + new Date().getMonth() + new Date().getSeconds();
+    	long processStartTime = System.currentTimeMillis();
+    	
+    	int seed = 4321;
 
     	System.out.println("Starting generation. Seed is: " + seed + "...");
 
     	int size = 1000;
-
     	int width = size;
     	int height = size / 2;
     	int buffer = 2;
     	double seaLevel = 0.25;
 
+    	double minX = -90;
+    	double maxX = 90;
+    	double minY = -180;
+    	double maxY = 180;
+    	
     	Module module = DefaultModules.getContinentNoise(seed); //getDetailedNoise(seed); //getSimpleNoise(seed); //getStandardNoise(seed);
 
     	long startTime = System.currentTimeMillis();
     	System.out.println("Generating initial noise...");
-    	// whole world
-    	//double[][] noise = NoiseFactory.generateSpherical(module, width + buffer, height + (buffer / 2), -90, 90, -180, 180, true, 1);
-    	// just the centre 50%
-    	//double[][] noise = NoiseFactory.generateSpherical(module, width + buffer, height + (buffer / 2), -45, 45, -90, 90, true, 1);
-    	// and even more zoomed in!
-    	double[][] noise = NoiseFactory.generateSpherical(module, width + buffer, height + (buffer / 2), -22.5, 22.5, -45, 45, true, 1);
+    	double[][] noise = NoiseFactory.generateSpherical(module, width + buffer, height + (buffer / 2), minX, maxX, minY, maxY, true, 1);
 
     	long endTime = System.currentTimeMillis();
     	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
@@ -99,10 +100,16 @@ public class AppTest
 
     	startTime = System.currentTimeMillis();
     	System.out.println("Generating regions...");
-    	int[][] regionData = RegionGenerator.generateRegions(noise, basinData, riverData, seaLevel, 30, 30, seed);
+    	int[][] regionData = RegionGenerator.generateRegions(noise, basinData, riverData, seaLevel, 60, 20, seed);
     	endTime = System.currentTimeMillis();
     	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
+    	startTime = System.currentTimeMillis();
+    	System.out.println("Generating biomes...");
+    	int[][] biomeData = BiomeGenerator.generateBiomes(noise, riverData, basinData, seaLevel, seed); //.generateBiomesByRegion(noise, riverData, basinData, regionData, seaLevel, seed);
+    	endTime = System.currentTimeMillis();
+    	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
+    	
     	startTime = System.currentTimeMillis();
     	System.out.println("Trimming buffers...");
 
@@ -110,6 +117,7 @@ public class AppTest
     	int[][] basinTrimmed = new int[noise.length - buffer][noise[0].length - (buffer / 2)];
     	int[][] riverDataTrimmed = new int[noise.length - buffer][noise[0].length - (buffer / 2)];
     	int[][] regionDataTrimmed = new int[noise.length - buffer][noise[0].length - (buffer / 2)];
+    	int[][] biomeDataTrimmed = new int[noise.length - buffer][noise[0].length - (buffer / 2)];
 
     	//trim out the buffer
     	for(int x = (buffer / 2); x < width + (buffer / 2); x++)
@@ -120,18 +128,21 @@ public class AppTest
     			basinTrimmed[x - (buffer / 2)][y - (buffer / 4)] = basinData[x][y];
     			riverDataTrimmed[x - (buffer / 2)][y - (buffer / 4)] = riverData[x][y];
     			regionDataTrimmed[x - (buffer / 2)][y - (buffer / 4)] = regionData[x][y];
+    			biomeDataTrimmed[x - (buffer / 2)][y - (buffer / 4)] = biomeData[x][y];
         	}
     	}
     	noise = noiseTrimmed;
     	basinData = basinTrimmed;
     	riverData = riverDataTrimmed;
     	regionData = regionDataTrimmed;
-
+    	biomeData = biomeDataTrimmed;
+    	
     	noiseTrimmed = null;
     	riverDataTrimmed = null;
     	regionDataTrimmed = null;
     	basinTrimmed = null;
-
+    	biomeDataTrimmed = null;
+    	
     	endTime = System.currentTimeMillis();
     	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
@@ -141,8 +152,12 @@ public class AppTest
     	assertTrue(Painter.paintHeightMap(noise, "c:/test/"));
     	assertTrue(Painter.paintRegionMap(regionData, "c:/test/", seed));
     	assertTrue(Painter.paintTerrainMap(noise, riverData, seaLevel, "c:/test/", true, true));
-
+    	assertTrue(Painter.paintBiomeMap(noise, riverData, biomeData, seaLevel, "c:/test/", true, false));
+    	
     	endTime = System.currentTimeMillis();
     	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
+    	
+    	long processEndTime = System.currentTimeMillis();
+    	System.out.println("Generation complete: " + ((processEndTime - processStartTime) / 1000) + " seconds");
     }
 }

@@ -302,4 +302,69 @@ public class Utilities
         0.212189, -0.815162, -0.538969, 0.0, -0.859262, 0.143405, -0.491024, 0.0,
         0.991353, 0.112814, 0.0670273, 0.0, 0.0337884, -0.979891, -0.196654, 0.0
     };
+    
+    /** spatial utils **/
+    
+ // convert an xy to a lat long. Envelope must be in WGS84 Geo
+    public static Coordinate pixelsToLatLong(Point pixels, int width, int height)
+    {
+        // get the ranges, but normalize to zero (no negatives)
+        double pixelsPerUnitLong = 360.0 / width;
+        double pixelsPerUnitLat = 180.0 / height;
+
+        double lon = (pixels.getX() * pixelsPerUnitLong) - 180.0;
+        double lat = (pixels.getY() * pixelsPerUnitLat) - 90.0;
+
+        return new Coordinate(lon, lat);
+    }
+
+    public static Point latLongToPixels(Coordinate latLon, int width, int height)
+    {
+        // get the ranges, but normalize to zero (no negatives)
+        double pixelsPerUnitLong = width / 360.0;
+        double pixelsPerUnitLat = height / 180.0;
+
+        int lon = (int)Math.round((latLon.getX() + 180.0) * pixelsPerUnitLong);
+        int lat = (int)Math.round((latLon.getY() + 90.0) * pixelsPerUnitLat);
+
+        return new Point(lon, lat);
+    }
+    
+    // reproject a lon lat to mercator projection X Y
+    public static Coordinate MercatorProjection(int width, int height, Coordinate coord)
+    {
+        double latitude = coord.getY(); // (φ)
+        double longitude = coord.getX(); // (λ)
+
+        // get x value
+        double x = (longitude + 180.0) * (width / 360.0);
+
+        // convert from degrees to radians
+        double latRad = latitude * Math.PI / 180.0;
+
+        // get y value
+        double mercN = Math.log(Math.tan((Math.PI / 4.0) + (latRad / 2.0)));
+        double y = (height / 2.0) - (width * mercN / (2.0 * Math.PI));
+
+        return new Coordinate(x, y);
+    }
+
+    // reproject a lon lat to miller cylindrical projection X Y
+    public static Coordinate MillerProjection(int width, int height, Coordinate coord)
+    {
+        double x;
+        double y;
+
+        //double lon = degreesToRadians(coord.X);
+        double lat = degreesToRadians(coord.getY());
+
+        x = (coord.getX() + 180.0) * (width / 360.0);
+
+        y = 1.25 * Math.log(Math.tan(0.25 * Math.PI + 0.4 * lat));
+        y = (height / 2) - (height / (2 * 2.303412543)) * y;
+
+        y += 34;
+
+        return new Coordinate(x, y);
+    }
 }

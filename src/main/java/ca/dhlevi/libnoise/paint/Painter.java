@@ -126,6 +126,63 @@ public class Painter
 		return saveBufferedImage(mapImage, path, "terrain");
 	}
 	
+	public static boolean paintBiomeMap(double[][] data, int[][] rivers, int[][] biomes, double seaLevel, String path, boolean hillshade, boolean shadeWater) throws IOException
+	{
+		int width = data.length;
+        int height = data[0].length;
+        
+		BufferedImage mapImage = createMapImageBuffer(width, height);
+		
+		for(int x = 0 ; x < width; x++)
+    	{
+    		for(int y = 0; y < height; y++)
+    		{
+    		    double noiseValue = data[x][y];
+    		    if(noiseValue > 1) noiseValue = 1;
+    		    if(noiseValue < 0) noiseValue = 0;
+    		   
+    		    // terrain painter
+    		    if(noiseValue < seaLevel || rivers[x][y] == 1)
+		    	{
+    		    	Color c = new Color(153, 217, 242, 255);
+    		    	if(shadeWater)
+    		    	{
+    		    		Color shade = Hillshader.shadePixel(data, width, height, x, y, 0).getRGB();
+    		    		c = PainterUtilities.blend(c, shade);  
+    		    	}
+    		    	
+    		    	mapImage.setRGB(x, y, c.getRGB());
+		    	}
+    		    else
+    		    {
+    		    	Color c = Color.white;
+    		    	
+    		    	if(biomes[x][y] == 1) c = PainterUtilities.gradient(new Color(192, 202, 212, 255), new Color(220, 220, 220, 255), noiseValue);
+    		    	if(biomes[x][y] == 2) c = PainterUtilities.gradient(new Color(156, 153, 160, 255), new Color(220, 220, 220, 255), noiseValue);
+    		    	if(biomes[x][y] == 3) c = PainterUtilities.gradient(new Color(53, 76, 55, 255), new Color(220, 220, 220, 255), noiseValue);
+    		    	
+    		    	if(biomes[x][y] == 4) c = PainterUtilities.gradient(new Color(92, 103, 84, 255), new Color(220, 220, 220, 255), noiseValue);
+    		    	if(biomes[x][y] == 5) c = PainterUtilities.gradient(new Color(15, 154, 58, 255), new Color(220, 220, 220, 255), noiseValue);
+    		    	if(biomes[x][y] == 6) c = PainterUtilities.gradient(new Color(2, 32, 21, 255), new Color(220, 220, 220, 255), noiseValue);
+    		    	
+    		    	if(biomes[x][y] == 7) c = PainterUtilities.gradient(new Color(215, 187, 165, 255), new Color(220, 220, 220, 255), noiseValue);
+    		    	if(biomes[x][y] == 8) c = PainterUtilities.gradient(new Color(179, 168, 148, 255), new Color(220, 220, 220, 255), noiseValue);
+    		    	if(biomes[x][y] == 9) c = PainterUtilities.gradient(new Color(108, 107, 89, 255), new Color(220, 220, 220, 255), noiseValue);
+    		    	
+	    		    if(hillshade)
+	    		    {
+	    		    	Color shade = Hillshader.shadePixel(data, width, height, x, y, 0).getRGB();
+	    		    	c = PainterUtilities.blend(c, shade);
+	    		    }
+	    		    
+	    		    mapImage.setRGB(x, y, c.getRGB());
+    		    }
+    		}
+    	}
+		
+		return saveBufferedImage(mapImage, path, "biome");
+	}
+	
 	private static BufferedImage createMapImageBuffer(int width, int height)
 	{
 		BufferedImage mapImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
