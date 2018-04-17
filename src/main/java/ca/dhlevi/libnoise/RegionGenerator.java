@@ -10,7 +10,7 @@ public class RegionGenerator
 	// regions should not cross rivers unless necessary
 	public static int[][] generateRegions(double[][] data, int[][] basins, int[][] rivers, double seaLevel, int seed)
 	{
-		int regionDensity = 300;
+		int regionDensity = 30;
 		int oceanRegionDensity = 30;
 
 		int width = data.length;
