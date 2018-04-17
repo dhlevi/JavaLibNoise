@@ -42,13 +42,15 @@ public class AppTest
      */
     public void testApp() throws Exception
     {
-    	int seed = 432; //new Date().getDay() + new Date().getMonth() + new Date().getSeconds();
+    	int seed = new Date().getDay() + new Date().getMonth() + new Date().getSeconds();
+
+    	System.out.println("Starting generation. Seed is: " + seed + "...");
 
     	int size = 1000;
 
     	int width = size;
     	int height = size / 2;
-    	int buffer = 10;
+    	int buffer = 2;
     	double seaLevel = 0.25;
 
     	Module module = DefaultModules.getContinentNoise(seed); //getDetailedNoise(seed); //getSimpleNoise(seed); //getStandardNoise(seed);
@@ -85,19 +87,19 @@ public class AppTest
 
     	startTime = System.currentTimeMillis();
     	System.out.println("Basin detection...");
-    	int[][] basinData = NoiseNormalizer.DetectBasins(noise, (int)Math.round(width * 0.5), seaLevel, true, true, seed);
+    	int[][] basinData = NoiseNormalizer.DetectBasins(noise, (int)Math.round(width * 0.5), seaLevel, false, false, seed);
     	endTime = System.currentTimeMillis();
     	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
     	startTime = System.currentTimeMillis();
     	System.out.println("Creating river paths...");
-    	int[][] riverData = RiverGenerator.createRiversAStar(noise, basinData, seaLevel, size, seed); //.createRiversFlowMethod(noise, seaLevel, 25, size, seed);
+    	int[][] riverData = RiverGenerator.createRiversAStar(noise, seaLevel, (int)Math.round(size * 1.5), seed); //.createRiversFlowMethod(noise, seaLevel, 25, size, seed);
     	endTime = System.currentTimeMillis();
     	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
     	startTime = System.currentTimeMillis();
     	System.out.println("Generating regions...");
-    	int[][] regionData = RegionGenerator.generateRegions(noise, riverData, seaLevel, seed);
+    	int[][] regionData = RegionGenerator.generateRegions(noise, basinData, riverData, seaLevel, 30, 30, seed);
     	endTime = System.currentTimeMillis();
     	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 

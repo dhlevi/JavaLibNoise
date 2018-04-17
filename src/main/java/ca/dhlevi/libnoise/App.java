@@ -51,13 +51,13 @@ public class App
 
     	startTime = System.currentTimeMillis();
     	System.out.println("Creating river paths...");
-    	int[][] riverData = RiverGenerator.createRiversAStar(noise, basinData, seaLevel, size, seed); //.createRiversFlowMethod(noise, seaLevel, 25, size, seed);
+    	int[][] riverData = RiverGenerator.createRiversAStar(noise, seaLevel, size, seed); //.createRiversFlowMethod(noise, seaLevel, 25, size, seed);
     	endTime = System.currentTimeMillis();
     	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
     	startTime = System.currentTimeMillis();
     	System.out.println("Generating regions...");
-    	int[][] regionData = RegionGenerator.generateRegions(noise, riverData, seaLevel, seed);
+    	int[][] regionData = RegionGenerator.generateRegions(noise, basinData, riverData, seaLevel, 30, 30, seed);
     	endTime = System.currentTimeMillis();
     	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 

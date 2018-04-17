@@ -8,10 +8,10 @@ public class RegionGenerator
 {
 	// generates regions by spreading random points and "growing" them until all possible pixels are owned by a region
 	// regions should not cross rivers unless necessary
-	public static int[][] generateRegions(double[][] data, int[][] basins, int[][] rivers, double seaLevel, int seed)
+	public static int[][] generateRegions(double[][] data, int[][] basins, int[][] rivers, double seaLevel, int regionDensity, int oceanRegionDensity, int seed)
 	{
-		int regionDensity = 30;
-		int oceanRegionDensity = 30;
+		if(regionDensity == 0) regionDensity = 30;
+		if(oceanRegionDensity == 0) oceanRegionDensity = 30;
 
 		int width = data.length;
         int height = data[0].length;
