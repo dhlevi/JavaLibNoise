@@ -10,7 +10,8 @@ public class RegionGenerator
 	// regions should not cross rivers unless necessary
 	public static int[][] generateRegions(double[][] data, int[][] basins, int[][] rivers, double seaLevel, int seed)
 	{
-		int regionDensity = 100;
+		int regionDensity = 300;
+		int oceanRegionDensity = 30;
 
 		int width = data.length;
         int height = data[0].length;
@@ -19,16 +20,21 @@ public class RegionGenerator
 
         int[][] regions = new int[width][height];
 
+        int terrestrialPixelsCount = 0;
         // the lower the density, the lower the region count
         // this method will create nice uniform grids for regions over the water
-        for(int x = width / regionDensity; x < width; x = x+=(width / regionDensity))
+        for(int x = width / oceanRegionDensity; x < width; x = x+=(width / oceanRegionDensity))
     	{
-    		for(int y = width / regionDensity; y < height; y+=(width / regionDensity))
+    		for(int y = width / oceanRegionDensity; y < height; y+=(width / oceanRegionDensity))
     		{
     			if(data[x][y] <= seaLevel)
     			{
     				oceanRegionCount++;
     				regions[x][y] = oceanRegionCount;
+    			}
+    			else
+    			{
+    				terrestrialPixelsCount++;
     			}
     		}
 		}
@@ -37,7 +43,7 @@ public class RegionGenerator
         // the lower the density the higher the region count, for terrestrial regions
         int terrainRegionCount = 0;
         Random rand = new Random(seed);
-        while(terrainRegionCount < (width / regionDensity) * (height / regionDensity))
+        while(terrestrialPixelsCount > 0 && terrainRegionCount < (width / regionDensity) * (height / regionDensity))
 		{
         	int x = rand.nextInt(width - 1);
         	int y = rand.nextInt(height - 1);
@@ -51,7 +57,7 @@ public class RegionGenerator
 
         int regionCount = oceanRegionCount + terrainRegionCount;
 
-        if(terrainRegionCount == 0)
+        if(terrestrialPixelsCount > 0 && terrainRegionCount == 0)
         {
         	// uh oh, We either have no land at all, or none were able to get a point needed for
         	// a region. So set all land to a region if possible.
