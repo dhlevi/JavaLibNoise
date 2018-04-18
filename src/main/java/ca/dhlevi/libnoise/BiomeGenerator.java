@@ -147,8 +147,6 @@ public class BiomeGenerator
             }
         }
         
-        paintMoisture(moisture, width, height);
-
         // set biome based on temp + moisture
         double maxTemp = 40;
         for (int x = 0; x < width; x++)
@@ -251,43 +249,6 @@ public class BiomeGenerator
 	    			moisture[pullX][pullY] += diff;
 	    	}
     	}
-    }
-    
-    public static void paintMoisture(double[][] moisture, int width, int height)
-    {
-        BufferedImage mapImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = (Graphics2D) mapImage.getGraphics();
-        g.setColor(Color.BLACK);
-        g.fillRect(0, 0, width, height);
-
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                double noiseValue = moisture[x][y];
-                if (noiseValue > 1)
-                    noiseValue = 1;
-                if (noiseValue < 0)
-                    noiseValue = 0;
-
-                int rgb = (int) Math.round(255 * noiseValue);
-
-                Color c = new Color(0, 0, rgb, 255);
-
-                mapImage.setRGB(x, y, c.getRGB());
-            }
-        }
-
-        mapImage.flush();
-
-        try
-        {
-            File outputfile = new File("c:/test/moisture.png");
-            outputfile.createNewFile();
-            boolean success = ImageIO.write(mapImage, "png", outputfile);
-        } catch (Exception e)
-        {
-        }
     }
     
     private static Point getClosestWaterPoint(double[][] data, int[][] rivers, Point point, double seaLevel, int tolerance)
