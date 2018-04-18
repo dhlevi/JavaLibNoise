@@ -8,15 +8,12 @@ import java.util.HashMap;
 
 import javax.imageio.ImageIO;
 
-import ca.dhlevi.libnoise.paint.Hillshader;
-import ca.dhlevi.libnoise.paint.PainterUtilities;
-
 public class BiomeGenerator
 {
     // initial biome test
     // this "algorithm" is very weak at the moment, and will be replaced by
     // something else as I get around to it
-    public static int[][] generateBiomes(double[][] data, int[][] rivers, int[][] basins, double seaLevel, int seed)
+    public static int[][] generateBiomes(double[][] data, int[][] rivers, int[][] basins, double seaLevel, double tempModifier, double moistureModifier, int seed)
     {
         int width = data.length;
         int height = data[0].length;
@@ -53,18 +50,81 @@ public class BiomeGenerator
 
         // set initial moisture levels
         double[][] moisture = new double[width][height];
-        double defaultMoistureGain = 0.001;
-        double defaultMoistureLoss = 1.0;
+
+        int maxIterations = width / 200 <= 10 ? 10 : width / 2000;
+
+        while (maxIterations > 0)
+        {
+            // easterlies
+            for (int y = 0; y < height - 1; y++)
+            {
+                for (int x = 0; x < width - 1; x++)
+                {
+                	if(data[x][y] <= seaLevel)
+                		moisture[x][y] = 1.0;
+                	
+                	if(moisture[x][y] < 1.0)
+                	{
+	                    double lat = Utilities.pixelsToLatLong(new Point(x, y), width, height).getY();
+	                    if (((lat <= -50) || (lat > -20 && lat <= 0)) && data[x][y] > seaLevel) // sw
+	                    {
+	                        // pull from the NE
+	                    	moistureCalc(moisture, data, seaLevel, x, y, x == width - 1 ? 0 : x + 1, y == 0 ? 0 : y - 1);
+	                    	moistureCalc(moisture, data, seaLevel, x, y, x == width - 1 ? 0 : x + 1, y);
+	                    	moistureCalc(moisture, data, seaLevel, x, y, x, y == 0 ? 0 : y - 1);
+	                    }
+	                    else if (((lat > 0 && lat <= 20) || (lat > 50)) && data[x][y] > seaLevel) // nw
+	                    {
+	                    	// push SE
+	                        moistureCalc(moisture, data, seaLevel, x, y, x == width - 1 ? width - 1 : x + 1, y == height - 1 ? height - 1 : y + 1);
+	                    	moistureCalc(moisture, data, seaLevel, x, y, x == width - 1 ? width - 1 : x + 1, y);
+	                    	moistureCalc(moisture, data, seaLevel, x, y, x, y == height - 1 ? height - 1 : y + 1);
+	                    }
+                	}
+                }
+            }
+            
+            // westerlies
+            for (int y = height - 1; y > 0; y--)
+            {
+                for (int x = width - 1; x > 0; x--)
+                {
+                	if(data[x][y] <= seaLevel)
+                		moisture[x][y] = 1.0;
+
+                	if(moisture[x][y] < 1.0)
+                	{
+	                    double lat = Utilities.pixelsToLatLong(new Point(x, y), width, height).getY();
+	                    if ((lat > -50 && lat <= -20) && data[x][y] > seaLevel) // ne
+	                    {
+	                    	// pull SW
+	                        moistureCalc(moisture, data, seaLevel, x, y, x == 0 ? width - 1 : x - 1, y == height - 1 ? height - 1 : y + 1);
+	                    	moistureCalc(moisture, data, seaLevel, x, y, x == 0 ? width - 1 : x - 1, y);
+	                    	moistureCalc(moisture, data, seaLevel, x, y, x, y == height - 1 ? height - 1 : y + 1);
+	                    } 
+	                    else if ((lat > 20 && lat <= 50) && data[x][y] > seaLevel) // se
+	                    {
+	                    	// pull NW
+	                        moistureCalc(moisture, data, seaLevel, x, y, x == 0 ? width - 1 : x - 1, y == 0 ? 0 : y - 1);
+	                    	moistureCalc(moisture, data, seaLevel, x, y,x == 0 ? width - 1 : x - 1, y);
+	                    	moistureCalc(moisture, data, seaLevel, x, y, x, y == 0 ? 0 : y - 1);
+	                    }
+                	}
+                }
+            }
+
+            maxIterations--;
+        }
 
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                double gain = data[x][y];
+                double gain = 0;
                 if (rivers[x][y] == 1)
-                    gain += defaultMoistureGain;
+                    gain = 1.0;
                 else if (data[x][y] <= seaLevel)
-                    gain += defaultMoistureGain;
+                    gain = 1.0;
                 else if (data[x][y] > seaLevel)
                 {
                     Point p = getClosestWaterPoint(data, rivers, new Point(x, y), seaLevel, (width / 500));
@@ -75,103 +135,22 @@ public class BiomeGenerator
                         
                         if(proximityToWaterGain < 0) proximityToWaterGain = 0;
                         
-                        moisture[x][y] += proximityToWaterGain;
+                        gain += proximityToWaterGain;
                     }
                 }
 
-                moisture[x][y] = gain;
+                gain += moistureModifier;
+
+                moisture[x][y] += gain;
+                if(moisture[x][y] > 1.0)
+                	moisture[x][y] = 1.0;
             }
         }
-
-        boolean moistureComplete = false;
-        int iterations = 0;
-        int maxIterations = 5;
-
-        while (!moistureComplete)
-        {
-            // easterlies
-            for (int y = height - 1; y > 0; y--)
-            {
-                double availableMoisture = 0.0;
-                for (int x = width - 1; x > 0; x--)
-                {
-                    double lat = Utilities.pixelsToLatLong(new Point(x, y), width, height).getY();
-                    double diff = availableMoisture * (1.0 - data[x][y]);
-                    availableMoisture += defaultMoistureGain * 10;
-                    
-                    if (data[x][y] > seaLevel)
-                        moisture[x][y] -= defaultMoistureGain * 5;
-                    
-                    if (((lat <= -50) || (lat > -20 && lat <= 0)) && data[x][y] > seaLevel) // sw
-                    {
-                        availableMoisture -= diff;
-
-                        if (availableMoisture > 0)
-                        {
-                            moisture[x == 0 ? width - 1 : x - 1][y == height - 1 ? height - 1 : y + 1] += diff / 2;
-                            moisture[x == 0 ? width - 1 : x - 1][y] += diff / 2;
-                            moisture[x][y == height - 1 ? height - 1 : y + 1] += diff / 2;
-                        }
-                    }
-                    else if (((lat > 0 && lat <= 20) || (lat > 50)) && data[x][y] > seaLevel) // nw
-                    {
-                        availableMoisture -= diff;
-
-                        if (availableMoisture > 0)
-                        {
-                            moisture[x == 0 ? width - 1 : x - 1][y == 0 ? 0 : y - 1] += diff / 2;
-                            moisture[x == 0 ? width - 1 : x - 1][y] += diff / 2;
-                            moisture[x][y == 0 ? 0 : y - 1] += diff / 2;
-                        }
-                    }
-                }
-            }
-            // westerlies
-            for (int x = 0; x < width; x++)
-            {
-                double availableMoisture = 0.0;
-                for (int y = 0; y < height; y++)
-                {
-                    double lat = Utilities.pixelsToLatLong(new Point(x, y), width, height).getY();
-                    double diff = availableMoisture * (1.0 - data[x][y]);
-                    availableMoisture += defaultMoistureGain * 10;
-                    
-                    if (data[x][y] > seaLevel)
-                        moisture[x][y] -= defaultMoistureGain * 5;
-
-                    if ((lat > -50 && lat <= -20) && data[x][y] > seaLevel) // ne
-                    {
-                        availableMoisture -= diff;
-
-                        if (availableMoisture > 0)
-                        {
-                            moisture[x == width - 1 ? width - 1 : x + 1][y == 0 ? 0 : y - 1] += diff / 2;
-                            moisture[x == width - 1 ? width - 1 : x + 1][y] += diff / 2;
-                            moisture[x][y == 0 ? 0 : y - 1] += diff / 2;
-                        }
-                    } 
-                    else if ((lat > 20 && lat <= 50) && data[x][y] > seaLevel) // se
-                    {
-                        availableMoisture -= diff;
-
-                        if (availableMoisture > 0)
-                        {
-                            moisture[x == width - 1 ? width - 1 : x + 1][y == height - 1 ? height - 1 : y + 1] += diff / 2;
-                            moisture[x == width - 1 ? width - 1 : x + 1][y] += diff / 2;
-                            moisture[x][y == height - 1 ? height - 1 : y + 1] += diff / 2;
-                        }
-                    }
-                }
-            }
-
-            iterations++;
-            moistureComplete = iterations >= maxIterations;
-        }
-
+        
         paintMoisture(moisture, width, height);
 
         // set biome based on temp + moisture
-        double maxTemp = 35;
+        double maxTemp = 40;
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -179,18 +158,23 @@ public class BiomeGenerator
                 double lat = Utilities.pixelsToLatLong(new Point(x, y), width, height).getY();
                 if (lat < 0)
                     lat = lat * -1;
-                double temp = (maxTemp * ((90 - lat) / 90)) * (1.0 - (data[x][y] / 2.0));
+                double temp = (maxTemp * ((90 - lat) / 90)) * (1.0 - data[x][y]);
                 double rainfall = moisture[x][y] + rivers[x][y];
 
-                if (temp < 5)
+                if (temp < 3)
                 {
-                    if (rainfall < 0.3)
+                    biomes[x][y] = 1;
+                } 
+                else if (temp >= 3 && temp < 10)
+                {
+                    if (rainfall < 0.2)
                         biomes[x][y] = 1;
-                    else if (rainfall >= 0.3 && rainfall < 0.6)
+                    else if (rainfall >= 0.2 && rainfall < 0.6)
                         biomes[x][y] = 2;
                     else
                         biomes[x][y] = 3;
-                } else if (temp >= 5 && temp < 20)
+                } 
+                else if (temp >= 10 && temp < 20)
                 {
                     if (rainfall < 0.3)
                         biomes[x][y] = 4;
@@ -198,7 +182,8 @@ public class BiomeGenerator
                         biomes[x][y] = 5;
                     else
                         biomes[x][y] = 6;
-                } else if (temp >= 20)
+                } 
+                else if (temp >= 20)
                 {
                     if (rainfall < 0.3)
                         biomes[x][y] = 7;
@@ -213,11 +198,11 @@ public class BiomeGenerator
         return biomes;
     }
 
-    public static int[][] generateBiomesByRegion(double[][] data, int[][] rivers, int[][] basins, int[][] regions, double seaLevel, int seed)
+    public static int[][] generateBiomesByRegion(double[][] data, int[][] rivers, int[][] basins, int[][] regions, double seaLevel, double tempModifier, double moistureModifier, int seed)
     {
         int width = data.length;
         int height = data[0].length;
-        int[][] biomes = generateBiomes(data, rivers, basins, seaLevel, seed);
+        int[][] biomes = generateBiomes(data, rivers, basins, seaLevel, tempModifier, moistureModifier, seed);
 
         HashMap<Integer, Integer> regionalBiomes = new HashMap<Integer, Integer>();
 
@@ -244,6 +229,30 @@ public class BiomeGenerator
         return biomes;
     }
 
+    public static void moistureCalc(double[][] moisture, double[][] data, double seaLevel, int sourceX, int sourceY, int pullX, int pullY)
+    {
+    	if(moisture[sourceX][sourceY] < 1.0)
+    	{
+	    	double spaceRemaining = 1.0 - moisture[sourceX][sourceY];
+	    	double maxPullableMoisture = 1.0 - data[pullX][pullY];
+	    	double pullAmount = spaceRemaining;
+	    	if(pullAmount > maxPullableMoisture)
+	    		pullAmount = maxPullableMoisture;
+	    	
+	    	if(data[pullX][pullY] > seaLevel)
+	    		moisture[pullX][pullY] -= pullAmount;
+	    	moisture[sourceX][sourceY] += pullAmount;
+	    	
+	    	if(moisture[sourceX][sourceY] > 1.0)
+	    	{
+	    		double diff = moisture[sourceX][sourceY] - 1.0;
+	    		moisture[sourceX][sourceY] -= diff;
+	    		if(data[pullX][pullY] > seaLevel)
+	    			moisture[pullX][pullY] += diff;
+	    	}
+    	}
+    }
+    
     public static void paintMoisture(double[][] moisture, int width, int height)
     {
         BufferedImage mapImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);

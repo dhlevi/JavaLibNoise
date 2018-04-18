@@ -45,7 +45,7 @@ public class AppTest extends TestCase
     {
         long processStartTime = System.currentTimeMillis();
 
-        int seed = 23432;
+        int seed = 42512114;
 
         System.out.println("Starting generation. Seed is: " + seed + "...");
 
@@ -55,10 +55,10 @@ public class AppTest extends TestCase
         int buffer = 4;
         double seaLevel = 0.25;
 
-        double minX = -45;
-        double maxX = 45;
-        double minY = -90;
-        double maxY = 90;
+        double minX = -90;
+        double maxX = 90;
+        double minY = -180;
+        double maxY = 180;
 
         Module module = DefaultModules.getContinentNoise(seed);
 
@@ -107,7 +107,7 @@ public class AppTest extends TestCase
 
         startTime = System.currentTimeMillis();
         System.out.println("Generating biomes...");
-        int[][] biomeData = BiomeGenerator.generateBiomes(noise, riverData, basinData, seaLevel, seed);
+        int[][] biomeData = BiomeGenerator.generateBiomes(noise, riverData, basinData, seaLevel, 0.0, 0.0, seed);
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
@@ -156,7 +156,7 @@ public class AppTest extends TestCase
         assertTrue(Painter.paintTerrainMap(noise, riverData, seaLevel, "c:/test/", true, true));
         assertTrue(Painter.paintBiomeMap(noise, riverData, biomeData, seaLevel, "c:/test/", true, false));
 
-        Painter.paintTempuratureBands(noise, 35.0, "c:/test/");
+        Painter.paintTempuratureBands(noise, 40.0, "c:/test/");
 
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");

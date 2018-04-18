@@ -151,7 +151,7 @@ public class Painter
                     noiseValue = 0;
 
                 // terrain painter
-                if (noiseValue < seaLevel || rivers[x][y] == 1)
+                if ((noiseValue < seaLevel || rivers[x][y] == 1) && biomes[x][y] != 1)
                 {
                     Color c = new Color(153, 217, 242, 255);
                     if (shadeWater)
@@ -243,10 +243,13 @@ public class Painter
                 double lat = Utilities.pixelsToLatLong(new Point(x, y), width, height).getY();
                 if (lat < 0)
                     lat = lat * -1;
-                double temp = (tempRange * ((90 - lat) / 90)) * (1.0 - (data[x][y] / 2.0));
+                double temp = (tempRange * ((90 - lat) / 90)) * (1.0 - data[x][y]);
 
                 int rgb = (int) Math.round(255 * (temp / tempRange));
 
+                if(rgb < 0) rgb = 0;
+                if(rgb > 255) rgb = 255;
+                
                 Color c = new Color(0, 0, 0, 255);
 
                 if (temp < 10)
