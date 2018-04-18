@@ -3,9 +3,9 @@ package ca.dhlevi.libnoise.operator;
 import ca.dhlevi.libnoise.Module;
 import ca.dhlevi.libnoise.Utilities;
 
-public class Rotate extends Operator 
+public class Rotate extends Operator
 {
-	private double x;
+    private double x;
     private double x1Matrix;
     private double x2Matrix;
     private double x3Matrix;
@@ -17,20 +17,20 @@ public class Rotate extends Operator
     private double z1Matrix;
     private double z2Matrix;
     private double z3Matrix;
-    
-	public Rotate(Module input)
-	{
-		setAngles(0.0, 0.0, 0.0);
-		this.getModules().add(input);
-	}
-	
-	public Rotate(Module input, double x, double y, double z)
-	{
-		setAngles(x, y, x);
-		this.getModules().add(input);
-	}
-	
-	private void setAngles(double x, double y, double z)
+
+    public Rotate(Module input)
+    {
+        setAngles(0.0, 0.0, 0.0);
+        this.getModules().add(input);
+    }
+
+    public Rotate(Module input, double x, double y, double z)
+    {
+        setAngles(x, y, x);
+        this.getModules().add(input);
+    }
+
+    private void setAngles(double x, double y, double z)
     {
         double xc = Math.cos(x * Utilities.degreesToRadians());
         double yc = Math.cos(y * Utilities.degreesToRadians());
@@ -53,50 +53,50 @@ public class Rotate extends Operator
         this.y = y;
         this.z = z;
     }
-	
-	@Override
-	public double getValue() 
-	{
-		return getValue(0, 0, 0, 1);
-	}
 
-	@Override
-	public double getValue(double x, double y, double z, int scale) 
-	{
-		double nx = (x1Matrix * x) + (y1Matrix * y) + (z1Matrix * z);
+    @Override
+    public double getValue()
+    {
+        return getValue(0, 0, 0, 1);
+    }
+
+    @Override
+    public double getValue(double x, double y, double z, int scale)
+    {
+        double nx = (x1Matrix * x) + (y1Matrix * y) + (z1Matrix * z);
         double ny = (x2Matrix * x) + (y2Matrix * y) + (z2Matrix * z);
         double nz = (x3Matrix * x) + (y3Matrix * y) + (z3Matrix * z);
 
         return this.getModules().get(0).getValue(nx, ny, nz, scale);
-	}
-	
-	public double getX() 
-	{
-		return x;
-	}
+    }
 
-	public void setX(double x) 
-	{
-		this.x = x;
-	}
+    public double getX()
+    {
+        return x;
+    }
 
-	public double getY() 
-	{
-		return y;
-	}
+    public void setX(double x)
+    {
+        this.x = x;
+    }
 
-	public void setY(double y) 
-	{
-		this.y = y;
-	}
+    public double getY()
+    {
+        return y;
+    }
 
-	public double getZ() 
-	{
-		return z;
-	}
+    public void setY(double y)
+    {
+        this.y = y;
+    }
 
-	public void setZ(double z) 
-	{
-		this.z = z;
-	}
+    public double getZ()
+    {
+        return z;
+    }
+
+    public void setZ(double z)
+    {
+        this.z = z;
+    }
 }

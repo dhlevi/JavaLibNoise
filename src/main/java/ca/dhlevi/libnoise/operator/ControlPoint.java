@@ -1,42 +1,42 @@
 package ca.dhlevi.libnoise.operator;
 
-public class ControlPoint implements Comparable<ControlPoint> 
+public class ControlPoint implements Comparable<ControlPoint>
 {
-	private double x;
-	private double y;
-	
-	public ControlPoint()
-	{
-	}
-	
-	public ControlPoint(double x, double y)
-	{
-		this.x = x;
-		this.y = y;
-	}
+    private double x;
+    private double y;
 
-	public double getX() 
-	{
-		return x;
-	}
+    public ControlPoint()
+    {
+    }
 
-	public void setX(double x) 
-	{
-		this.x = x;
-	}
+    public ControlPoint(double x, double y)
+    {
+        this.x = x;
+        this.y = y;
+    }
 
-	public double getY() 
-	{
-		return y;
-	}
+    public double getX()
+    {
+        return x;
+    }
 
-	public void setY(double y) 
-	{
-		this.y = y;
-	}
+    public void setX(double x)
+    {
+        this.x = x;
+    }
 
-	public int compareTo(ControlPoint o) 
-	{
-		return new Double(this.x).compareTo(new Double(((ControlPoint)o).getX()));
-	}
+    public double getY()
+    {
+        return y;
+    }
+
+    public void setY(double y)
+    {
+        this.y = y;
+    }
+
+    public int compareTo(ControlPoint o)
+    {
+        return new Double(this.x).compareTo(new Double(((ControlPoint) o).getX()));
+    }
 }

@@ -2,43 +2,43 @@ package ca.dhlevi.libnoise.generator;
 
 import ca.dhlevi.libnoise.Utilities;
 
-public class Billow extends Generator 
+public class Billow extends Generator
 {
-	private double frequency;
-	private double lacunarity;
-	private QualityMode quality;
-	private int octave;
-	private double persistence;
-	private int seed;
-	
-	public Billow()
-	{
-		this.frequency = 1.0;
-		this.lacunarity = 1.0;
-		this.persistence =  0.5;
-		this.octave = 5;
-		this.seed = 1;
-		this.quality = QualityMode.Medium;
-	}
+    private double frequency;
+    private double lacunarity;
+    private QualityMode quality;
+    private int octave;
+    private double persistence;
+    private int seed;
 
-	public Billow(double frequency, double lacunarity, double persistence, int octaves, int seed, QualityMode quality)
-	{
-		this.frequency = frequency;
-		this.lacunarity = lacunarity;
-		this.persistence = persistence;
-		this.octave = octaves;
-		this.seed = seed;
-		this.quality = quality;
-	}
-	
-	@Override
-	public double getValue() 
-	{
-		return getValue(0, 0, 0, 1);
-	}
-	
-	@Override
-	public double getValue(double x, double y, double z, int scale)
+    public Billow()
+    {
+        this.frequency = 1.0;
+        this.lacunarity = 1.0;
+        this.persistence = 0.5;
+        this.octave = 5;
+        this.seed = 1;
+        this.quality = QualityMode.Medium;
+    }
+
+    public Billow(double frequency, double lacunarity, double persistence, int octaves, int seed, QualityMode quality)
+    {
+        this.frequency = frequency;
+        this.lacunarity = lacunarity;
+        this.persistence = persistence;
+        this.octave = octaves;
+        this.seed = seed;
+        this.quality = quality;
+    }
+
+    @Override
+    public double getValue()
+    {
+        return getValue(0, 0, 0, 1);
+    }
+
+    @Override
+    public double getValue(double x, double y, double z, int scale)
     {
         double value = 0.0;
         double curp = 1.0;
@@ -46,7 +46,7 @@ public class Billow extends Generator
         x *= frequency;
         y *= frequency;
         z *= frequency;
-        
+
         for (int i = 0; i < octave + scale; i++)
         {
             double nx = Utilities.makeInt32Range(x);
@@ -59,74 +59,74 @@ public class Billow extends Generator
 
             signal = 2.0 * Math.abs(signal) - 1.0;
             value += signal * curp;
-            
+
             x *= lacunarity;
             y *= lacunarity;
             z *= lacunarity;
-            
+
             curp *= persistence;
         }
 
         return value + 0.5;
     }
-	
-	public double getFrequency() 
-	{
-		return frequency;
-	}
 
-	public void setFrequency(double frequency) 
-	{
-		this.frequency = frequency;
-	}
+    public double getFrequency()
+    {
+        return frequency;
+    }
 
-	public double getLacunarity() 
-	{
-		return lacunarity;
-	}
+    public void setFrequency(double frequency)
+    {
+        this.frequency = frequency;
+    }
 
-	public void setLacunarity(double lacunarity) 
-	{
-		this.lacunarity = lacunarity;
-	}
+    public double getLacunarity()
+    {
+        return lacunarity;
+    }
 
-	public QualityMode getQuality() 
-	{
-		return quality;
-	}
+    public void setLacunarity(double lacunarity)
+    {
+        this.lacunarity = lacunarity;
+    }
 
-	public void setQuality(QualityMode quality) 
-	{
-		this.quality = quality;
-	}
+    public QualityMode getQuality()
+    {
+        return quality;
+    }
 
-	public int getOctave() 
-	{
-		return octave;
-	}
+    public void setQuality(QualityMode quality)
+    {
+        this.quality = quality;
+    }
 
-	public void setOctave(int octave) 
-	{
-		this.octave = Utilities.clamp(octave, 1, Utilities.MAX_OCTAVE);
-	}
+    public int getOctave()
+    {
+        return octave;
+    }
 
-	public double getPersistence() 
-	{
-		return persistence;
-	}
+    public void setOctave(int octave)
+    {
+        this.octave = Utilities.clamp(octave, 1, Utilities.MAX_OCTAVE);
+    }
 
-	public void setPersistence(double persistence) 
-	{
-		this.persistence = persistence;
-	}
+    public double getPersistence()
+    {
+        return persistence;
+    }
 
-	public int getSeed() 
-	{
-		return seed;
-	}
+    public void setPersistence(double persistence)
+    {
+        this.persistence = persistence;
+    }
 
-	public void setSeed(int seed) 
-	{
-		this.seed = seed;
-	}
+    public int getSeed()
+    {
+        return seed;
+    }
+
+    public void setSeed(int seed)
+    {
+        this.seed = seed;
+    }
 }

@@ -4,8 +4,8 @@ import ca.dhlevi.libnoise.Module;
 
 public abstract class Generator extends Module
 {
-	public Generator()
-	{
-		
-	}
+    public Generator()
+    {
+
+    }
 }

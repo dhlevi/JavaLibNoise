@@ -15,17 +15,17 @@ import junit.framework.TestSuite;
 /**
  * Unit test for simple App.
  */
-public class AppTest
-    extends TestCase
+public class AppTest extends TestCase
 {
     /**
      * Create the test case
      *
-     * @param testName name of the test case
+     * @param testName
+     *            name of the test case
      */
-    public AppTest( String testName )
+    public AppTest(String testName)
     {
-        super( testName );
+        super(testName);
     }
 
     /**
@@ -33,131 +33,135 @@ public class AppTest
      */
     public static Test suite()
     {
-        return new TestSuite( AppTest.class );
+        return new TestSuite(AppTest.class);
     }
 
     /**
      * Rigourous Test :-)
+     * 
      * @throws Exception
      */
     public void testApp() throws Exception
     {
-    	long processStartTime = System.currentTimeMillis();
-    	
-    	int seed = 4321;
+        long processStartTime = System.currentTimeMillis();
 
-    	System.out.println("Starting generation. Seed is: " + seed + "...");
+        int seed = 23432;
 
-    	int size = 1000;
-    	int width = size;
-    	int height = size / 2;
-    	int buffer = 2;
-    	double seaLevel = 0.25;
+        System.out.println("Starting generation. Seed is: " + seed + "...");
 
-    	double minX = -90;
-    	double maxX = 90;
-    	double minY = -180;
-    	double maxY = 180;
-    	
-    	Module module = DefaultModules.getContinentNoise(seed); //getDetailedNoise(seed); //getSimpleNoise(seed); //getStandardNoise(seed);
+        int size = 2000;
+        int width = size;
+        int height = size / 2;
+        int buffer = 4;
+        double seaLevel = 0.25;
 
-    	long startTime = System.currentTimeMillis();
-    	System.out.println("Generating initial noise...");
-    	double[][] noise = NoiseFactory.generateSpherical(module, width + buffer, height + (buffer / 2), minX, maxX, minY, maxY, true, 1);
+        double minX = -45;
+        double maxX = 45;
+        double minY = -90;
+        double maxY = 90;
 
-    	long endTime = System.currentTimeMillis();
-    	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
+        Module module = DefaultModules.getContinentNoise(seed);
 
-    	startTime = System.currentTimeMillis();
-    	System.out.println("Thermal Erosion...");
-    	Erosion.thermalErosion(noise, 0.125, 50);
-    	endTime = System.currentTimeMillis();
-    	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
+        long startTime = System.currentTimeMillis();
+        System.out.println("Generating initial noise...");
+        double[][] noise = NoiseFactory.generateSpherical(module, width + buffer, height + (buffer / 2), minX, maxX, minY, maxY, true, 1);
 
-    	startTime = System.currentTimeMillis();
-    	System.out.println("Hydraulic Erosion...");
-    	Erosion.advancedHydraulicErosion(noise, 0.0001, 0.01, seaLevel, 20, true, 200);
-    	endTime = System.currentTimeMillis();
-    	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
+        long endTime = System.currentTimeMillis();
+        System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
-    	startTime = System.currentTimeMillis();
-    	System.out.println("Noise normalizing...");
-    	NoiseNormalizer.Normalize(noise, seaLevel);
-    	endTime = System.currentTimeMillis();
-    	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
+        startTime = System.currentTimeMillis();
+        System.out.println("Thermal Erosion...");
+        Erosion.thermalErosion(noise, 0.125, 7);
+        endTime = System.currentTimeMillis();
+        System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
-    	startTime = System.currentTimeMillis();
-    	System.out.println("Basin detection...");
-    	int[][] basinData = NoiseNormalizer.DetectBasins(noise, (int)Math.round(width * 0.5), seaLevel, false, false, seed);
-    	endTime = System.currentTimeMillis();
-    	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
+        startTime = System.currentTimeMillis();
+        System.out.println("Hydraulic Erosion...");
+        Erosion.advancedHydraulicErosion(noise, 0.0001, 0.01, seaLevel, 7, true, 200);
+        endTime = System.currentTimeMillis();
+        System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
-    	startTime = System.currentTimeMillis();
-    	System.out.println("Creating river paths...");
-    	int[][] riverData = RiverGenerator.createRiversAStar(noise, seaLevel, (int)Math.round(size * 1.5), seed); //.createRiversFlowMethod(noise, seaLevel, 25, size, seed);
-    	endTime = System.currentTimeMillis();
-    	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
+        startTime = System.currentTimeMillis();
+        System.out.println("Noise normalizing...");
+        NoiseNormalizer.Normalize(noise, seaLevel);
+        endTime = System.currentTimeMillis();
+        System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
-    	startTime = System.currentTimeMillis();
-    	System.out.println("Generating regions...");
-    	int[][] regionData = RegionGenerator.generateRegions(noise, basinData, riverData, seaLevel, 60, 20, seed);
-    	endTime = System.currentTimeMillis();
-    	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
+        startTime = System.currentTimeMillis();
+        System.out.println("Basin detection...");
+        int[][] basinData = NoiseNormalizer.DetectBasins(noise, (int) Math.round(width * 0.5), seaLevel, false, false, seed);
+        endTime = System.currentTimeMillis();
+        System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
-    	startTime = System.currentTimeMillis();
-    	System.out.println("Generating biomes...");
-    	int[][] biomeData = BiomeGenerator.generateBiomes(noise, riverData, basinData, seaLevel, seed); //.generateBiomesByRegion(noise, riverData, basinData, regionData, seaLevel, seed);
-    	endTime = System.currentTimeMillis();
-    	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
-    	
-    	startTime = System.currentTimeMillis();
-    	System.out.println("Trimming buffers...");
+        startTime = System.currentTimeMillis();
+        System.out.println("Creating river paths...");
+        int[][] riverData = RiverGenerator.createRiversAStar(noise, seaLevel, (int) Math.round(size * 1.5), seed);
+        endTime = System.currentTimeMillis();
+        System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
-    	double[][] noiseTrimmed = new double[noise.length - buffer][noise[0].length - (buffer / 2)];
-    	int[][] basinTrimmed = new int[noise.length - buffer][noise[0].length - (buffer / 2)];
-    	int[][] riverDataTrimmed = new int[noise.length - buffer][noise[0].length - (buffer / 2)];
-    	int[][] regionDataTrimmed = new int[noise.length - buffer][noise[0].length - (buffer / 2)];
-    	int[][] biomeDataTrimmed = new int[noise.length - buffer][noise[0].length - (buffer / 2)];
+        startTime = System.currentTimeMillis();
+        System.out.println("Generating regions...");
+        int[][] regionData = RegionGenerator.generateRegions(noise, basinData, riverData, seaLevel, 40, 40, seed);
+        endTime = System.currentTimeMillis();
+        System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
-    	//trim out the buffer
-    	for(int x = (buffer / 2); x < width + (buffer / 2); x++)
-    	{
-    		for(int y = (buffer / 4); y < height + (buffer / 4); y++)
-        	{
-    			noiseTrimmed[x - (buffer / 2)][y - (buffer / 4)] = noise[x][y];
-    			basinTrimmed[x - (buffer / 2)][y - (buffer / 4)] = basinData[x][y];
-    			riverDataTrimmed[x - (buffer / 2)][y - (buffer / 4)] = riverData[x][y];
-    			regionDataTrimmed[x - (buffer / 2)][y - (buffer / 4)] = regionData[x][y];
-    			biomeDataTrimmed[x - (buffer / 2)][y - (buffer / 4)] = biomeData[x][y];
-        	}
-    	}
-    	noise = noiseTrimmed;
-    	basinData = basinTrimmed;
-    	riverData = riverDataTrimmed;
-    	regionData = regionDataTrimmed;
-    	biomeData = biomeDataTrimmed;
-    	
-    	noiseTrimmed = null;
-    	riverDataTrimmed = null;
-    	regionDataTrimmed = null;
-    	basinTrimmed = null;
-    	biomeDataTrimmed = null;
-    	
-    	endTime = System.currentTimeMillis();
-    	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
+        startTime = System.currentTimeMillis();
+        System.out.println("Generating biomes...");
+        int[][] biomeData = BiomeGenerator.generateBiomes(noise, riverData, basinData, seaLevel, seed);
+        endTime = System.currentTimeMillis();
+        System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
-    	startTime = System.currentTimeMillis();
-    	System.out.println("Painting images...");
-    	// paint the heightmap
-    	assertTrue(Painter.paintHeightMap(noise, "c:/test/"));
-    	assertTrue(Painter.paintRegionMap(regionData, "c:/test/", seed));
-    	assertTrue(Painter.paintTerrainMap(noise, riverData, seaLevel, "c:/test/", true, true));
-    	assertTrue(Painter.paintBiomeMap(noise, riverData, biomeData, seaLevel, "c:/test/", true, false));
-    	
-    	endTime = System.currentTimeMillis();
-    	System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
-    	
-    	long processEndTime = System.currentTimeMillis();
-    	System.out.println("Generation complete: " + ((processEndTime - processStartTime) / 1000) + " seconds");
+        startTime = System.currentTimeMillis();
+        System.out.println("Trimming buffers...");
+
+        double[][] noiseTrimmed = new double[noise.length - buffer][noise[0].length - (buffer / 2)];
+        int[][] basinTrimmed = new int[noise.length - buffer][noise[0].length - (buffer / 2)];
+        int[][] riverDataTrimmed = new int[noise.length - buffer][noise[0].length - (buffer / 2)];
+        int[][] regionDataTrimmed = new int[noise.length - buffer][noise[0].length - (buffer / 2)];
+        int[][] biomeDataTrimmed = new int[noise.length - buffer][noise[0].length - (buffer / 2)];
+
+        // trim out the buffer
+        for (int x = (buffer / 2); x < width + (buffer / 2); x++)
+        {
+            for (int y = (buffer / 4); y < height + (buffer / 4); y++)
+            {
+                noiseTrimmed[x - (buffer / 2)][y - (buffer / 4)] = noise[x][y];
+                basinTrimmed[x - (buffer / 2)][y - (buffer / 4)] = basinData[x][y];
+                riverDataTrimmed[x - (buffer / 2)][y - (buffer / 4)] = riverData[x][y];
+                regionDataTrimmed[x - (buffer / 2)][y - (buffer / 4)] = regionData[x][y];
+                biomeDataTrimmed[x - (buffer / 2)][y - (buffer / 4)] = biomeData[x][y];
+            }
+        }
+        
+        noise = noiseTrimmed;
+        basinData = basinTrimmed;
+        riverData = riverDataTrimmed;
+        regionData = regionDataTrimmed;
+        biomeData = biomeDataTrimmed;
+
+        noiseTrimmed = null;
+        riverDataTrimmed = null;
+        regionDataTrimmed = null;
+        basinTrimmed = null;
+        biomeDataTrimmed = null;
+
+        endTime = System.currentTimeMillis();
+        System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
+
+        startTime = System.currentTimeMillis();
+        System.out.println("Painting images...");
+        // paint the heightmap
+        assertTrue(Painter.paintHeightMap(noise, "c:/test/"));
+        assertTrue(Painter.paintRegionMap(regionData, "c:/test/", seed));
+        assertTrue(Painter.paintTerrainMap(noise, riverData, seaLevel, "c:/test/", true, true));
+        assertTrue(Painter.paintBiomeMap(noise, riverData, biomeData, seaLevel, "c:/test/", true, false));
+
+        Painter.paintTempuratureBands(noise, 35.0, "c:/test/");
+
+        endTime = System.currentTimeMillis();
+        System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
+
+        long processEndTime = System.currentTimeMillis();
+        System.out.println("Generation complete: " + ((processEndTime - processStartTime) / 1000) + " seconds");
     }
 }
