@@ -142,6 +142,9 @@ public class RiverGenerator
             }
         }
 
+        // add a little bit of terrain carving where the rivers were
+        
+        
         return rivers;
     }
 
@@ -221,10 +224,11 @@ public class RiverGenerator
                 {
                     if (p != null && !riverPoints.contains(p))
                     {
-                        // get the points score
+                        // get the points score. In this case, we're looking for the 
+                        // lowest value (shortest distance plus shortest height)
                         double distance = Math.hypot(p.getX() - destinationPoint.getX(), p.getY() - destinationPoint.getY());
-                        double heightValue = grid[p.getX()][p.getY()];
-                        double score = heightValue + (distance / 300);
+                        double heightValue = grid[p.getX()][p.getY()] - grid[currentPoint.getX()][currentPoint.getY()];
+                        double score = heightValue + (distance / 120);
 
                         if (bestPoint == null || score < bestScore)
                         {
@@ -268,6 +272,15 @@ public class RiverGenerator
             }
         }
 
+        for(int y = 0; y < height; y++)
+        {
+            for(int x = 0; x < width; x++)
+            {
+                if(rivers[x][y] > 0)
+                    grid[x][y] -= 0.01;
+            }
+        }
+        
         return rivers;
     }
 

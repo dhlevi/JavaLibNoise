@@ -85,6 +85,8 @@ public class RegionGenerator
         // cleanup any little dangles, grow into any double-river spaces
         regions = generationPass(regions, width, height, data, seaLevel, rivers, 1.0, false, true, seed);
         // regions are now defined, but there may be some leftover space that isn't assigned yet, particularly random islands
+        // if an island is close to another region, it'll "merge" with it. if there isn't any region nearby (at least 10 pixels)
+        // a new region will be created
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -100,11 +102,16 @@ public class RegionGenerator
                     } 
                     else
                     {
-                        Point closestRegionPoint = getClosestRegionPoint(regions, data, new Point(x, y), seaLevel, width);
+                        Point closestRegionPoint = getClosestRegionPoint(regions, data, new Point(x, y), seaLevel, width / 1000 > 10 ? width / 1000 : 10);
                         if (closestRegionPoint != null)
                         {
                             int region = regions[closestRegionPoint.getX()][closestRegionPoint.getY()];
                             regions[x][y] = region;
+                        }
+                        else
+                        {
+                            regionCount++;
+                            regions[x][y] = regionCount;
                         }
                     }
                 }

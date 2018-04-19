@@ -8,6 +8,7 @@ import ca.dhlevi.libnoise.NoiseNormalizer;
 import ca.dhlevi.libnoise.RegionGenerator;
 import ca.dhlevi.libnoise.RiverGenerator;
 import ca.dhlevi.libnoise.paint.Painter;
+import ca.dhlevi.libnoise.spatial.Envelope;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -45,7 +46,7 @@ public class AppTest extends TestCase
     {
         long processStartTime = System.currentTimeMillis();
 
-        int seed = 42512114;
+        int seed = 88978728;
 
         System.out.println("Starting generation. Seed is: " + seed + "...");
 
@@ -55,16 +56,16 @@ public class AppTest extends TestCase
         int buffer = 4;
         double seaLevel = 0.25;
 
-        double minX = -90;
-        double maxX = 90;
-        double minY = -180;
-        double maxY = 180;
+        double minY = -22.5;
+        double maxY = 22.5;
+        double minX = -45;
+        double maxX = 45;
 
         Module module = DefaultModules.getContinentNoise(seed);
 
         long startTime = System.currentTimeMillis();
         System.out.println("Generating initial noise...");
-        double[][] noise = NoiseFactory.generateSpherical(module, width + buffer, height + (buffer / 2), minX, maxX, minY, maxY, true, 1);
+        double[][] noise = NoiseFactory.generateSpherical(module, width + buffer, height + (buffer / 2), minY, maxY, minX, maxX, true, 1);
 
         long endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
@@ -95,7 +96,7 @@ public class AppTest extends TestCase
 
         startTime = System.currentTimeMillis();
         System.out.println("Creating river paths...");
-        int[][] riverData = RiverGenerator.createRiversAStar(noise, seaLevel, (int) Math.round(size * 1.5), seed);
+        int[][] riverData = RiverGenerator.createRiversAStar(noise, seaLevel, size, seed);
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
@@ -107,7 +108,7 @@ public class AppTest extends TestCase
 
         startTime = System.currentTimeMillis();
         System.out.println("Generating biomes...");
-        int[][] biomeData = BiomeGenerator.generateBiomes(noise, riverData, basinData, seaLevel, 0.0, 0.0, seed);
+        int[][] biomeData = BiomeGenerator.generateBiomes(noise, riverData, basinData, new Envelope(minX, minY, maxX, maxY), seaLevel, 0.0, 0.0, seed);
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
@@ -156,7 +157,7 @@ public class AppTest extends TestCase
         assertTrue(Painter.paintTerrainMap(noise, riverData, seaLevel, "c:/test/", true, true));
         assertTrue(Painter.paintBiomeMap(noise, riverData, biomeData, seaLevel, "c:/test/", true, false));
 
-        Painter.paintTempuratureBands(noise, 40.0, "c:/test/");
+        Painter.paintTempuratureBands(noise, BiomeGenerator.MAX_TEMP, "c:/test/", new Envelope(minX, minY, maxX, maxY));
 
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");

@@ -1,4 +1,4 @@
-package ca.dhlevi.libnoise;
+package ca.dhlevi.libnoise.spatial;
 
 public class Coordinate
 {

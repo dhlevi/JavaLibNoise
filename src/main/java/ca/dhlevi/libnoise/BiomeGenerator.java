@@ -8,12 +8,16 @@ import java.util.HashMap;
 
 import javax.imageio.ImageIO;
 
+import ca.dhlevi.libnoise.spatial.Envelope;
+import ca.dhlevi.libnoise.spatial.SpatialUtilities;
+
 public class BiomeGenerator
 {
+    public static double MAX_TEMP = 40;
     // initial biome test
     // this "algorithm" is very weak at the moment, and will be replaced by
     // something else as I get around to it
-    public static int[][] generateBiomes(double[][] data, int[][] rivers, int[][] basins, double seaLevel, double tempModifier, double moistureModifier, int seed)
+    public static int[][] generateBiomes(double[][] data, int[][] rivers, int[][] basins, Envelope bbox, double seaLevel, double tempModifier, double moistureModifier, int seed)
     {
         int width = data.length;
         int height = data[0].length;
@@ -51,7 +55,7 @@ public class BiomeGenerator
         // set initial moisture levels
         double[][] moisture = new double[width][height];
 
-        int maxIterations = width / 200 <= 10 ? 10 : width / 2000;
+        int maxIterations = width / 20 <= 10 ? 10 : width / 20;
 
         while (maxIterations > 0)
         {
@@ -65,7 +69,7 @@ public class BiomeGenerator
                 	
                 	if(moisture[x][y] < 1.0)
                 	{
-	                    double lat = Utilities.pixelsToLatLong(new Point(x, y), width, height).getY();
+	                    double lat = SpatialUtilities.pixelsToLatLong(new Point(x, y), width, height, bbox).getY();
 	                    if (((lat <= -50) || (lat > -20 && lat <= 0)) && data[x][y] > seaLevel) // sw
 	                    {
 	                        // pull from the NE
@@ -94,7 +98,7 @@ public class BiomeGenerator
 
                 	if(moisture[x][y] < 1.0)
                 	{
-	                    double lat = Utilities.pixelsToLatLong(new Point(x, y), width, height).getY();
+	                    double lat = SpatialUtilities.pixelsToLatLong(new Point(x, y), width, height, bbox).getY();
 	                    if ((lat > -50 && lat <= -20) && data[x][y] > seaLevel) // ne
 	                    {
 	                    	// pull SW
@@ -148,15 +152,14 @@ public class BiomeGenerator
         }
         
         // set biome based on temp + moisture
-        double maxTemp = 40;
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                double lat = Utilities.pixelsToLatLong(new Point(x, y), width, height).getY();
+                double lat = SpatialUtilities.pixelsToLatLong(new Point(x, y), width, height, bbox).getY();
                 if (lat < 0)
                     lat = lat * -1;
-                double temp = (maxTemp * ((90 - lat) / 90)) * (1.0 - data[x][y]);
+                double temp = (MAX_TEMP * ((90 - lat) / 90)) * (1.0 - data[x][y]);
                 double rainfall = moisture[x][y] + rivers[x][y];
 
                 if (temp < 3)
@@ -196,11 +199,11 @@ public class BiomeGenerator
         return biomes;
     }
 
-    public static int[][] generateBiomesByRegion(double[][] data, int[][] rivers, int[][] basins, int[][] regions, double seaLevel, double tempModifier, double moistureModifier, int seed)
+    public static int[][] generateBiomesByRegion(double[][] data, int[][] rivers, int[][] basins, int[][] regions, Envelope bbox, double seaLevel, double tempModifier, double moistureModifier, int seed)
     {
         int width = data.length;
         int height = data[0].length;
-        int[][] biomes = generateBiomes(data, rivers, basins, seaLevel, tempModifier, moistureModifier, seed);
+        int[][] biomes = generateBiomes(data, rivers, basins, bbox, seaLevel, tempModifier, moistureModifier, seed);
 
         HashMap<Integer, Integer> regionalBiomes = new HashMap<Integer, Integer>();
 

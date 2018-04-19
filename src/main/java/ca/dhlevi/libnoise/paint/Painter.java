@@ -12,7 +12,8 @@ import javax.imageio.ImageIO;
 
 import ca.dhlevi.libnoise.Point;
 import ca.dhlevi.libnoise.Utilities;
-
+import ca.dhlevi.libnoise.spatial.Envelope;
+import ca.dhlevi.libnoise.spatial.SpatialUtilities;
 public class Painter
 {
     public static boolean paintHeightMap(double[][] data, String path) throws IOException
@@ -229,7 +230,7 @@ public class Painter
         return saveBufferedImage(mapImage, path, "moisture");
     }
 
-    public static boolean paintTempuratureBands(double[][] data, double tempRange, String path) throws IOException
+    public static boolean paintTempuratureBands(double[][] data, double tempRange, String path, Envelope bbox) throws IOException
     {
         int width = data.length;
         int height = data[0].length;
@@ -240,7 +241,7 @@ public class Painter
         {
             for (int y = 0; y < height; y++)
             {
-                double lat = Utilities.pixelsToLatLong(new Point(x, y), width, height).getY();
+                double lat = SpatialUtilities.pixelsToLatLong(new Point(x, y), width, height, bbox).getY();
                 if (lat < 0)
                     lat = lat * -1;
                 double temp = (tempRange * ((90 - lat) / 90)) * (1.0 - data[x][y]);
