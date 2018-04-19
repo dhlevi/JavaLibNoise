@@ -56,10 +56,10 @@ public class AppTest extends TestCase
         int buffer = 4;
         double seaLevel = 0.25;
 
-        double minY = -22.5;
-        double maxY = 22.5;
-        double minX = -45;
-        double maxX = 45;
+        double minY = -90;
+        double maxY = 90;
+        double minX = -180;
+        double maxX = 180;
 
         Module module = DefaultModules.getContinentNoise(seed);
 

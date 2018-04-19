@@ -1,19 +1,15 @@
 package ca.dhlevi.libnoise;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 
-import javax.imageio.ImageIO;
-
+import ca.dhlevi.libnoise.paint.Painter;
 import ca.dhlevi.libnoise.spatial.Envelope;
 import ca.dhlevi.libnoise.spatial.SpatialUtilities;
 
 public class BiomeGenerator
 {
-    public static double MAX_TEMP = 40;
+    public static double MAX_TEMP = 50;
     // initial biome test
     // this "algorithm" is very weak at the moment, and will be replaced by
     // something else as I get around to it
@@ -55,7 +51,7 @@ public class BiomeGenerator
         // set initial moisture levels
         double[][] moisture = new double[width][height];
 
-        int maxIterations = width / 20 <= 10 ? 10 : width / 20;
+        int maxIterations = width / 200 <= 10 ? 10 : width / 200;
 
         while (maxIterations > 0)
         {
@@ -150,7 +146,7 @@ public class BiomeGenerator
                 	moisture[x][y] = 1.0;
             }
         }
-        
+
         // set biome based on temp + moisture
         for (int x = 0; x < width; x++)
         {
