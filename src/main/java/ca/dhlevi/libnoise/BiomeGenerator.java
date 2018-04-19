@@ -3,7 +3,6 @@ package ca.dhlevi.libnoise;
 import java.io.IOException;
 import java.util.HashMap;
 
-import ca.dhlevi.libnoise.paint.Painter;
 import ca.dhlevi.libnoise.spatial.Envelope;
 import ca.dhlevi.libnoise.spatial.SpatialUtilities;
 
@@ -147,6 +146,8 @@ public class BiomeGenerator
             }
         }
 
+        Erosion.thermalErosion(moisture, 0.125, 10);
+        
         // set biome based on temp + moisture
         for (int x = 0; x < width; x++)
         {
