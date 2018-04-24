@@ -8,7 +8,7 @@ public class Hillshader
 {
     public static HSLColor shadePixel(double[][] noise, int width, int height, int x, int y, int buffer)
     {
-        double zFactor = 60.0f; // the higher the 'Z' factor, the more pronounced the hillshading
+        double zFactor = 40.0; // the higher the 'Z' factor, the more pronounced the hillshading
 
         return shadePixel(noise, width, height, x, y, zFactor, buffer);
     }
@@ -16,9 +16,9 @@ public class Hillshader
     public static HSLColor shadePixel(double[][] noise, int width, int height, int x, int y, double zFactor, int buffer)
     {
         // The default Altitude of 45 degrees and Azimuth of 315 degrees will be used.
-        double Altitude = 45.0f;
-        double Azimuth = 315.0f;
-        double cellSize = 1.0f;
+        double Altitude = 80.0;
+        double Azimuth = 315.0;
+        double cellSize = 1.0;
 
         return shadePixel(noise, width, height, x, y, zFactor, Altitude, Azimuth, cellSize, buffer);
     }
@@ -50,18 +50,18 @@ public class Hillshader
 
         double slopeRad = Math.atan(zFactor * Math.sqrt((Math.pow(xRateOfChange, 2) + Math.pow(yRateOfChange, 2))));
 
-        double aspectRad = 0.0f;
+        double aspectRad = 0.0;
 
-        if (xRateOfChange != 0)
+        if (xRateOfChange != 0.0)
             aspectRad = Math.atan2(yRateOfChange, -xRateOfChange);
-        if (aspectRad < 0)
-            aspectRad = (2 * Math.PI) + aspectRad;
+        if (aspectRad < 0.0)
+            aspectRad = (2.0 * Math.PI) + aspectRad;
 
-        if (xRateOfChange == 0)
+        if (xRateOfChange == 0.0)
         {
-            if (yRateOfChange > 0)
+            if (yRateOfChange > 0.0)
                 aspectRad = Math.PI / 2.0;
-            else if (yRateOfChange < 0)
+            else if (yRateOfChange < 0.0)
                 aspectRad = (2.0 * Math.PI) - (Math.PI / 2.0);
         }
 
@@ -80,7 +80,7 @@ public class Hillshader
 
     public static HSLColor[][] shadeAllPixels(double[][] noise, int width, int height, int buffer)
     {
-        double zFactor = 60.0f; // the higher the 'Z' factor, the more pronounced the hillshading
+        double zFactor = 60.0; // the higher the 'Z' factor, the more pronounced the hillshading
 
         return shadeAllPixels(noise, width, height, zFactor, buffer);
     }
@@ -88,9 +88,9 @@ public class Hillshader
     public static HSLColor[][] shadeAllPixels(double[][] noise, int width, int height, double zFactor, int buffer)
     {
         // The default Altitude of 45 degrees and Azimuth of 315 degrees will be used.
-        double Altitude = 45.0f;
-        double Azimuth = 315.0f;
-        double cellSize = 1.0f;
+        double Altitude = 45.0;
+        double Azimuth = 315.0;
+        double cellSize = 1.0;
 
         return shadeAllPixels(noise, width, height, zFactor, Altitude, Azimuth, cellSize, buffer);
     }
