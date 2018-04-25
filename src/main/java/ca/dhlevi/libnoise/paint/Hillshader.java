@@ -50,18 +50,18 @@ public class Hillshader
 
         double slopeRad = Math.atan(zFactor * Math.sqrt((Math.pow(xRateOfChange, 2) + Math.pow(yRateOfChange, 2))));
 
-        double aspectRad = 0.0f;
+        double aspectRad = 0.0;
 
-        if (xRateOfChange != 0)
+        if (xRateOfChange != 0.0)
             aspectRad = Math.atan2(yRateOfChange, -xRateOfChange);
-        if (aspectRad < 0)
-            aspectRad = (2 * Math.PI) + aspectRad;
+        if (aspectRad < 0.0)
+            aspectRad = (2.0 * Math.PI) + aspectRad;
 
-        if (xRateOfChange == 0)
+        if (xRateOfChange == 0.0)
         {
-            if (yRateOfChange > 0)
+            if (yRateOfChange > 0.0)
                 aspectRad = Math.PI / 2.0;
-            else if (yRateOfChange < 0)
+            else if (yRateOfChange < 0.0)
                 aspectRad = (2.0 * Math.PI) - (Math.PI / 2.0);
         }
 
@@ -81,7 +81,7 @@ public class Hillshader
     public static HSLColor[][] shadeAllPixels(double[][] noise, int width, int height, int buffer)
     {
         double zFactor = 40.0f; // the higher the 'Z' factor, the more pronounced the hillshading
-
+        
         return shadeAllPixels(noise, width, height, zFactor, buffer);
     }
 

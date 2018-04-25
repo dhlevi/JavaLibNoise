@@ -13,9 +13,9 @@ public class Utilities
         return (value < min) ? min : (value > max) ? max : value;
     }
 
-    public static float clamp(float value)
+    public static double clamp(double value)
     {
-        return (value < 0.0f) ? 0.0f : (value > 1.0f) ? 1.0f : value;
+        return (value < 0.0) ? 0.0 : (value > 1.0) ? 1.0 : value;
     }
 
     public static double makeInt32Range(double value)
@@ -33,12 +33,12 @@ public class Utilities
 
     public static double mapCubicSCurve(double value)
     {
-        return (Math.pow(value, 2) * (3.0 - 2.0 * value));
+        return (Math.pow(value, 2.0) * (3.0 - 2.0 * value));
     }
 
     public static double mapQuinticSCurve(double value)
     {
-        double a3 = Math.pow(value, 3);
+        double a3 = Math.pow(value, 3.0);
         double a4 = a3 * value;
         double a5 = a4 * value;
 
@@ -67,8 +67,7 @@ public class Utilities
 
     public static long valueNoise3DInt(int x, int y, int z, int seed)
     {
-        long n = (GENTERATOR_NOISE_X * x + GENTERATOR_NOISE_Y * y + GENTERATOR_NOISE_Z * z + GENERATOR_SEED * seed)
-                & 0x7fffffff;
+        long n = (GENTERATOR_NOISE_X * x + GENTERATOR_NOISE_Y * y + GENTERATOR_NOISE_Z * z + GENERATOR_SEED * seed) & 0x7fffffff;
         n = (n >> 13) ^ n;
 
         return (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
@@ -81,7 +80,7 @@ public class Utilities
 
     public static double degreesToRadians()
     {
-        return Math.PI / 180;
+        return Math.PI / 180.0;
     }
 
     /*** Noise Algorithms ***/
