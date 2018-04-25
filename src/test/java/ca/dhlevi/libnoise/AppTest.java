@@ -8,7 +8,9 @@ import ca.dhlevi.libnoise.NoiseNormalizer;
 import ca.dhlevi.libnoise.RegionGenerator;
 import ca.dhlevi.libnoise.RiverGenerator;
 import ca.dhlevi.libnoise.paint.Painter;
+import ca.dhlevi.libnoise.spatial.Coordinate;
 import ca.dhlevi.libnoise.spatial.Envelope;
+import ca.dhlevi.libnoise.spatial.SpatialUtilities;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -45,31 +47,82 @@ public class AppTest extends TestCase
     public void testApp() throws Exception
     {
         long processStartTime = System.currentTimeMillis();
-
+        boolean reproject = true;
         int seed = 88978728;
 
         System.out.println("Starting generation. Seed is: " + seed + "...");
 
-        int size = 2000;
+        int size = 4000;
         int width = size;
         int height = size / 2;
-        int buffer = 4;
+        int buffer = 0;
         double seaLevel = 0.25;
 
         double minY = -90;
         double maxY = 90;
         double minX = -180;
         double maxX = 180;
-
+        
+        if(reproject) // reprojection currently doesn't work on bbox elements, need to add that in!
+        {
+            minY = -90;
+            maxY = 90;
+            minX = -180;
+            maxX = 180;
+        }
+        
+        Envelope bbox = new Envelope(minX, minY, maxX, maxY);
+        
         Module module = DefaultModules.getContinentNoise(seed);
 
         long startTime = System.currentTimeMillis();
         System.out.println("Generating initial noise...");
         double[][] noise = NoiseFactory.generateSpherical(module, width + buffer, height + (buffer / 2), minY, maxY, minX, maxX, true, 1);
-
         long endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
+        if(reproject)
+        {
+            startTime = System.currentTimeMillis();
+            System.out.println("Reprojecting to Mercator...");
+            double[][] projectedNoise = new double[height][height];
+            for(int x = 0; x < width; x++)
+            {
+                for(int y = 0; y < height; y++)
+                {
+                    Coordinate coord = SpatialUtilities.pixelsToLatLong(new Point(x, y), width, height, bbox);
+                    Coordinate projectedCoord2 = SpatialUtilities.MercatorProjection(height, height, coord, bbox);
+                    
+                    if((int)projectedCoord2.getX() > 0 && (int)projectedCoord2.getX() < height && (int)projectedCoord2.getY() > 0 && (int)projectedCoord2.getY() < height)
+                    {
+                        projectedNoise[(int)projectedCoord2.getX()][height - 1 - (int)projectedCoord2.getY()] = noise[x][y];
+                    }
+                }
+            }
+            
+            for(int x = 0; x < height; x++)
+            {
+                for(int y = 0; y < height; y++)
+                {
+                    if(y > 0)
+                        if(projectedNoise[x][y] == 0.0) projectedNoise[x][y] = projectedNoise[x][y - 1];
+                }
+                
+                for(int y = 0; y < height; y++)
+                {
+                    if(x > 0)
+                        if(projectedNoise[x][y] == 0.0) projectedNoise[x][y] = projectedNoise[x - 1][y];
+                }
+            }
+            
+            noise = projectedNoise;
+            width = height;
+            size = height;
+            
+            endTime = System.currentTimeMillis();
+            System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
+        }
+        
         startTime = System.currentTimeMillis();
         System.out.println("Thermal Erosion...");
         Erosion.thermalErosion(noise, 0.125, 7);
@@ -108,7 +161,7 @@ public class AppTest extends TestCase
 
         startTime = System.currentTimeMillis();
         System.out.println("Generating biomes...");
-        int[][] biomeData = BiomeGenerator.generateBiomes(noise, riverData, basinData, new Envelope(minX, minY, maxX, maxY), seaLevel, 0.0, 0.0, seed);
+        int[][] biomeData = BiomeGenerator.generateBiomes(noise, riverData, basinData, bbox, seaLevel, 0.0, 0.0, seed);
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
@@ -161,7 +214,7 @@ public class AppTest extends TestCase
 
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
-
+        
         long processEndTime = System.currentTimeMillis();
         System.out.println("Generation complete: " + ((processEndTime - processStartTime) / 1000) + " seconds");
     }

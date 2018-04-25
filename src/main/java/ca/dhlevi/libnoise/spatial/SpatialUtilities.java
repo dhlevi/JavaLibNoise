@@ -1,5 +1,7 @@
 package ca.dhlevi.libnoise.spatial;
 
+import java.util.List;
+
 import ca.dhlevi.libnoise.Point;
 
 public class SpatialUtilities
@@ -50,8 +52,8 @@ public class SpatialUtilities
         double pixelsPerUnitLong = width / longUnits;
         double pixelsPerUnitLat = height / latUnits;
 
-        int lon = (int) Math.round((latLon.getX() + (long1 - 180.0)) * pixelsPerUnitLong);
-        int lat = (int) Math.round((latLon.getY() + (lat1 - 90.0)) * pixelsPerUnitLat);
+        int lon = (int) Math.round((latLon.getX() + 180.0) * pixelsPerUnitLong);
+        int lat = (int) Math.round((latLon.getY() +  90.0) * pixelsPerUnitLat);
 
         return new Point(lon, lat);
     }
@@ -59,14 +61,22 @@ public class SpatialUtilities
     // reproject a lon lat to mercator projection X Y
     public static Coordinate MercatorProjection(int width, int height, Coordinate coord, Envelope bbox)
     {
-        double latitude = coord.getY(); // (φ)
-        double longitude = coord.getX(); // (λ)
+        double long1 = bbox.getMinX() + 180.0;
+        double long2 = bbox.getMaxX() + 180.0;
+        double lat1 = bbox.getMinY() + 90.0;
+        double lat2 = bbox.getMaxY() + 90.0;
 
+        double longUnits = long2 - long1;
+        double latUnits = lat2 - lat1;
+
+        double pixelsPerUnitLong = width / longUnits;
+        double pixelsPerUnitLat = height / latUnits;
+        
         // get x value
-        double x = (longitude + 180.0) * (width / 360.0);
+        double x = (coord.getX() + 180.0) * (width / longUnits);
 
         // convert from degrees to radians
-        double latRad = latitude * Math.PI / 180.0;
+        double latRad = degreesToRadians(coord.getY());
 
         // get y value
         double mercN = Math.log(Math.tan((Math.PI / 4.0) + (latRad / 2.0)));
@@ -78,19 +88,34 @@ public class SpatialUtilities
     // reproject a lon lat to miller cylindrical projection X Y
     public static Coordinate MillerProjection(int width, int height, Coordinate coord, Envelope bbox)
     {
-        double x;
-        double y;
-
-        // double lon = degreesToRadians(coord.X);
+        double lon = degreesToRadians(coord.getX());
         double lat = degreesToRadians(coord.getY());
 
-        x = (coord.getX() + 180.0) * (width / 360.0);
-
-        y = 1.25 * Math.log(Math.tan(0.25 * Math.PI + 0.4 * lat));
-        y = (height / 2) - (height / (2 * 2.303412543)) * y;
-
-        y += 34;
+        double x = (coord.getX() + 180.0) * (width / 360.0);
+        double y = ((height / 2.0) - (height / (2.0 * 2.303412543)) * (1.25 * Math.log(Math.tan(0.25 * Math.PI + 0.4 * lat)))) + 34;
 
         return new Coordinate(x, y);
+    }
+    
+    //crs transformations
+    public static Coordinate transformGeoToWebMercator(Coordinate coord)
+    {
+        double x = coord.getX() * 20037508.34 / 180.0;
+        double y = Math.log(Math.tan((90.0 + coord.getY()) * Math.PI / 360.0)) / (Math.PI / 180.0);
+        y = y * 20037508.34 / 180.0;
+        
+        return new Coordinate(x, y);
+    }
+    
+    public static Coordinate transformWebMercatorToGeo(Coordinate coord)
+    {
+        if (Math.abs(coord.getX()) > 20037508.3427892 || Math.abs(coord.getY()) > 20037508.3427892) return null;
+
+        double semimajorAxis = 6378137.0;  // WGS84 spheriod semimajor axis
+
+        double lat = (1.5707963267948966 - (2.0 * Math.atan(Math.exp((-1.0 * coord.getY()) / semimajorAxis)))) * (180.0 / Math.PI);
+        double lon = ((coord.getX() / semimajorAxis) * 57.295779513082323) - ((Math.floor((((coord.getX() / semimajorAxis) * 57.295779513082323) + 180.0) / 360.0)) * 360.0);
+
+        return new Coordinate(lon, lat);
     }
 }

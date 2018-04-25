@@ -28,6 +28,7 @@ public class RiverGenerator
             int riverLength = 0;
             List<Point> riverPoints = new ArrayList<Point>();
 
+            int pointAttempts = 0;
             while (currentPoint == null)
             {
                 int x = rand.nextInt(width);
@@ -36,6 +37,14 @@ public class RiverGenerator
                 if (data[x][y] > seaLevel && rivers[x][y] == 0)
                 {
                     currentPoint = new Point(x, y);
+                }
+                
+                pointAttempts++;
+                // at what point do we determine we're stuck in a loop here?
+                if(pointAttempts > width * 2)
+                {
+                    currentPoint = new Point(0, 0);
+                    riverComplete = true;
                 }
             }
 
@@ -168,6 +177,7 @@ public class RiverGenerator
             List<Point> riverPoints = new ArrayList<Point>();
 
             // get a random starting point
+            int pointAttempts = 0;
             while (startPoint == null)
             {
                 int x = rand.nextInt(width);
@@ -176,6 +186,14 @@ public class RiverGenerator
                 if (grid[x][y] > seaLevel && rivers[x][y] == 0)
                 {
                     startPoint = new Point(x, y);
+                    currentPoint = new Point(x, y);
+                }
+                
+                pointAttempts++;
+                // at what point do we determine we're stuck in a loop here?
+                if(pointAttempts > width * 2)
+                {
+                    startPoint = new Point(0, 0);
                     currentPoint = new Point(x, y);
                 }
             }
