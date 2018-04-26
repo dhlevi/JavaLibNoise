@@ -39,13 +39,13 @@ public class App
 
         startTime = System.currentTimeMillis();
         System.out.println("Noise normalizing...");
-        NoiseNormalizer.Normalize(noise, seaLevel);
+        NoiseNormalizer.normalize(noise, seaLevel);
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
         startTime = System.currentTimeMillis();
         System.out.println("Basin detection...");
-        int[][] basinData = NoiseNormalizer.DetectBasins(noise, (int) Math.round(width * 0.5), seaLevel, true, true, seed);
+        int[][] basinData = NoiseNormalizer.detectBasins(noise, (int) Math.round(width * 0.5), seaLevel, true, true, seed);
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
