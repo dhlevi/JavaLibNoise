@@ -7,7 +7,7 @@ public class NoiseNormalizer
 {
     // This is used to clear out any single pixel dangles and define the coastline areas of a heightmap. 
     // Sea level is required to remove any single pixel lakes
-    public static void Normalize(double[][] noise, double SeaLevel)
+    public static void normalize(double[][] noise, double seaLevel)
     {
         int Width = noise.length;
         int Height = noise[0].length;
@@ -27,28 +27,28 @@ public class NoiseNormalizer
                 int waterNeighbours = 0;
                 int landNeighbours = 0;
 
-                if (n <= SeaLevel)
+                if (n <= seaLevel)
                     waterNeighbours++;
                 else
                     landNeighbours++;
-                if (e <= SeaLevel)
+                if (e <= seaLevel)
                     waterNeighbours++;
                 else
                     landNeighbours++;
-                if (s <= SeaLevel)
+                if (s <= seaLevel)
                     waterNeighbours++;
                 else
                     landNeighbours++;
-                if (w <= SeaLevel)
+                if (w <= seaLevel)
                     waterNeighbours++;
                 else
                     landNeighbours++;
 
                 // If this is a dangle (single pixel surrounded by water or land) then fill it in or sink it down
-                if (val <= SeaLevel && waterNeighbours < 2)
-                    noise[x][y] = SeaLevel + 0.05f;
-                else if (val > SeaLevel && landNeighbours < 2)
-                    noise[x][y] = SeaLevel - 0.05f;
+                if (val <= seaLevel && waterNeighbours < 2)
+                    noise[x][y] = seaLevel + 0.05f;
+                else if (val > seaLevel && landNeighbours < 2)
+                    noise[x][y] = seaLevel - 0.05f;
             }
         }
     }
@@ -57,37 +57,37 @@ public class NoiseNormalizer
     // then be filled in removing holes from a heightmap.
     // if desired, you can keep small basins as lakes. Will return calculated
     // basin areas if needed for other calculations later.
-    public static int[][] DetectBasins(double[][] noise, int tolerance, double SeaLevel, boolean fillBasins, boolean keepSmallLakes, int seed)
+    public static int[][] detectBasins(double[][] noise, int tolerance, double seaLevel, boolean fillBasins, boolean keepSmallLakes, int seed)
     {
-        int Width = noise.length;
-        int Height = noise[0].length;
-        int[][] setPoints = new int[Width][Height];
+        int width = noise.length;
+        int height = noise[0].length;
+        int[][] setPoints = new int[width][height];
         Random rand = new Random(seed);
         // create a temporary array for water levels and land
         // 1 = land, 2 = lake, 3 = large waterbody (ocean/sea), 4 = Unfilled, lake, 0 is unassigned
         // unfilled lakes are small lakes that are underneath the tolerance for a basin fill
         // these lakes will remain as water after the basin fill process.
-        for (int x = 0; x < Width; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < Height; y++)
+            for (int y = 0; y < height; y++)
             {
                 // only process unassigned points
                 if (setPoints[x][y] == 0)
                 {
                     double val = noise[x][y];
 
-                    if (val <= SeaLevel)
+                    if (val <= seaLevel)
                     {
                         // check if neighbouring an "ocean" pixel first, before walking points
                         int n = y > 0 ? setPoints[x][y - 1] : -1;
-                        int s = y < Height - 1 ? setPoints[x][y + 1] : -1;
-                        int e = x < Width - 1 ? setPoints[x + 1][y] : setPoints[0][y];
-                        int w = x > 0 ? setPoints[x - 1][y] : setPoints[Width - 1][y];
+                        int s = y < height - 1 ? setPoints[x][y + 1] : -1;
+                        int e = x < width - 1 ? setPoints[x + 1][y] : setPoints[0][y];
+                        int w = x > 0 ? setPoints[x - 1][y] : setPoints[width - 1][y];
 
                         int nw = x > 0 && y > 0 ? setPoints[x - 1][y - 1] : -1;
-                        int ne = x < Width - 1 && y > 0 ? setPoints[x + 1][y - 1] : -1;
-                        int sw = x > 0 && y < Height - 1 ? setPoints[x - 1][y + 1] : -1;
-                        int se = x < Width - 1 && y < Height - 1 ? setPoints[x + 1][y + 1] : -1;
+                        int ne = x < width - 1 && y > 0 ? setPoints[x + 1][y - 1] : -1;
+                        int sw = x > 0 && y < height - 1 ? setPoints[x - 1][y + 1] : -1;
+                        int se = x < width - 1 && y < height - 1 ? setPoints[x + 1][y + 1] : -1;
 
                         // neighbour is an ocean, and this is water, so it too must be part of the ocean.
                         // otherwise, this is unassigned and next to land or a small waterbody. We need to scan the points
@@ -103,7 +103,7 @@ public class NoiseNormalizer
                         } 
                         else
                         {
-                            List<Point> scannedPoints = FeatureTracer.traceEqualOrBelowValue(noise, x, y, Width, Height, SeaLevel, true);
+                            List<Point> scannedPoints = FeatureTracer.traceEqualOrBelowValue(noise, x, y, width, height, seaLevel, true);
                             for (Point p : scannedPoints)
                             {
                                 setPoints[p.getX()][p.getY()] = scannedPoints.size() <= tolerance ? 2 : 3;
@@ -119,23 +119,23 @@ public class NoiseNormalizer
         }
 
         // second pass, sw to ne this time, to clean up any missed internal areas
-        for (int x = 0; x < Width; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < Height; y++)
+            for (int y = 0; y < height; y++)
             {
                 double val = noise[x][y];
 
-                if (val <= SeaLevel)
+                if (val <= seaLevel)
                 {
                     int n = y > 0 ? setPoints[x][y - 1] : -1;
-                    int s = y < Height - 1 ? setPoints[x][y + 1] : -1;
-                    int e = x < Width - 1 ? setPoints[x + 1][y] : setPoints[0][y];
-                    int w = x > 0 ? setPoints[x - 1][y] : setPoints[Width - 1][y];
+                    int s = y < height - 1 ? setPoints[x][y + 1] : -1;
+                    int e = x < width - 1 ? setPoints[x + 1][y] : setPoints[0][y];
+                    int w = x > 0 ? setPoints[x - 1][y] : setPoints[width - 1][y];
 
                     int nw = x > 0 && y > 0 ? setPoints[x - 1][y - 1] : -1;
-                    int ne = x < Width - 1 && y > 0 ? setPoints[x + 1][y - 1] : -1;
-                    int sw = x > 0 && y < Height - 1 ? setPoints[x - 1][y + 1] : -1;
-                    int se = x < Width - 1 && y < Height - 1 ? setPoints[x + 1][y + 1] : -1;
+                    int ne = x < width - 1 && y > 0 ? setPoints[x + 1][y - 1] : -1;
+                    int sw = x > 0 && y < height - 1 ? setPoints[x - 1][y + 1] : -1;
+                    int se = x < width - 1 && y < height - 1 ? setPoints[x + 1][y + 1] : -1;
 
                     // neighbour is an ocean, and this is water, so it too must be part of the ocean.
                     // otherwise, this is unassigned and next to land or a small waterbody. We need to scan the points
@@ -148,30 +148,30 @@ public class NoiseNormalizer
         // third and final pass, there shouldn't be any corrections needed
         // but we'll ensure the ocean/lake values are set, just in case
         // at this point, we'll also fill in the basins, if required.
-        for (int x = Width - 1; x >= 0; x--)
+        for (int x = width - 1; x >= 0; x--)
         {
-            for (int y = Height - 1; y >= 0; y--)
+            for (int y = height - 1; y >= 0; y--)
             {
                 double val = noise[x][y];
 
-                if (val <= SeaLevel)
+                if (val <= seaLevel)
                 {
                     int n = y > 0 ? setPoints[x][y - 1] : -1;
-                    int s = y < Height - 1 ? setPoints[x][y + 1] : -1;
-                    int e = x < Width - 1 ? setPoints[x + 1][y] : setPoints[0][y];
-                    int w = x > 0 ? setPoints[x - 1][y] : setPoints[Width - 1][y];
+                    int s = y < height - 1 ? setPoints[x][y + 1] : -1;
+                    int e = x < width - 1 ? setPoints[x + 1][y] : setPoints[0][y];
+                    int w = x > 0 ? setPoints[x - 1][y] : setPoints[width - 1][y];
 
                     int nw = x > 0 && y > 0 ? setPoints[x - 1][y - 1] : -1;
-                    int ne = x < Width - 1 && y > 0 ? setPoints[x + 1][y - 1] : -1;
-                    int sw = x > 0 && y < Height - 1 ? setPoints[x - 1][y + 1] : -1;
-                    int se = x < Width - 1 && y < Height - 1 ? setPoints[x + 1][y + 1] : -1;
+                    int ne = x < width - 1 && y > 0 ? setPoints[x + 1][y - 1] : -1;
+                    int sw = x > 0 && y < height - 1 ? setPoints[x - 1][y + 1] : -1;
+                    int se = x < width - 1 && y < height - 1 ? setPoints[x + 1][y + 1] : -1;
 
                     // neighbour is an ocean, and this is water, so it too must be part of the ocean.
                     // otherwise, this is unassigned and next to land or a small waterbody. We need to scan the points
                     if (n == 3 || s == 3 || e == 3 || w == 3 || nw == 3 || ne == 3 || sw == 3 || se == 3)
                         setPoints[x][y] = 3;
                     else if (setPoints[x][y] == 2 && fillBasins)
-                        noise[x][y] = SeaLevel + (rand.nextDouble() / 100.0);// lower the value = heavier noise in fill
+                        noise[x][y] = seaLevel + (rand.nextDouble() / 100.0);// lower the value = heavier noise in fill
                 }
             }
         }

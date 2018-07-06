@@ -4,12 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import ca.dhlevi.libnoise.spatial.Coordinate;
+import ca.dhlevi.libnoise.spatial.Envelope;
+import ca.dhlevi.libnoise.spatial.SpatialUtilities;
+
 public class RegionGenerator
 {
     // generates regions by spreading random points and "growing" them until all
     // possible pixels are owned by a region
     // regions should not cross rivers unless necessary
-    public static int[][] generateRegions(double[][] data, int[][] basins, int[][] rivers, double seaLevel, int regionDensity, int oceanRegionDensity, int seed)
+    public static int[][] generateRegions(double[][] data, int[][] basins, int[][] rivers, double seaLevel, int regionDensity, int oceanRegionDensity, Envelope bbox, int seed)
     {
         if (regionDensity == 0)
             regionDensity = 30;
@@ -45,9 +49,10 @@ public class RegionGenerator
 
         // random point method
         // the lower the density the higher the region count, for terrestrial regions
+        // try and spread the points so there's greater density in the middle
         int terrainRegionCount = 0;
         Random rand = new Random(seed);
-        while (terrestrialPixelsCount > 0 && terrainRegionCount < (width / regionDensity) * (height / regionDensity))
+        /*while (terrestrialPixelsCount > 0 && terrainRegionCount < (width / regionDensity) * (height / regionDensity))
         {
             int x = rand.nextInt(width - 1);
             int y = rand.nextInt(height - 1);
@@ -57,8 +62,51 @@ public class RegionGenerator
                 terrainRegionCount++;
                 regions[x][y] = terrainRegionCount + oceanRegionCount;
             }
+        }*/
+
+        // "natural city" method.
+        // Place locations of settlement in 16km intervals.
+        // once all possible locations are placed, adjust each one to place them in
+        // suitable locations (off high slopes, closer to river/water) remove regions if needed
+        // if water is distant, no village can grow?
+        // use this grid to generate provinces as usual
+        int cityLevel = 5; // 1 = hamlet (16km apart), 5 = village, 10 = town, 15 = city, 20 = global centre
+        int pixelDist = 16 * cityLevel;
+        int row = 0;
+        while(row < data[0].length)
+        {
+            Coordinate c1 = SpatialUtilities.pixelsToLatLong(new Point(0, row), width, height, bbox);
+            Coordinate c2 = SpatialUtilities.pixelsToLatLong(new Point(1, row), width, height, bbox);
+            Coordinate c3 = SpatialUtilities.pixelsToLatLong(new Point(0, row + 1), width, height, bbox);
+            
+            double pixelLongitudeDistanceKms = SpatialUtilities.haversineDistance(c1, c2) / 1000;
+            double pixelLatitudeDistanceKms = SpatialUtilities.haversineDistance(c1, c3) / 1000;
+            
+            // we have distances. Place points across this row at 16km distances.
+            int column = 0;
+            while(column < data.length)
+            {
+                // drop a region if not on a river, ocean, or at a height
+                if(rivers[column][row] < 1 && data[column][row] > seaLevel && data[column][row] < 0.8)
+                {
+                    terrainRegionCount++;
+                    // is there a body of water or river close by? If so move point towards them
+                    Point river = getClosestRegionPoint(rivers, data, new Point(column, row), seaLevel, bbox, pixelDist / 2);
+                    
+                    if(river != null) regions[river.getX()][river.getY()] = terrainRegionCount + oceanRegionCount;
+                    else regions[column][row] = terrainRegionCount + oceanRegionCount;
+                    
+                    regions[column][row] = terrainRegionCount + oceanRegionCount;
+                }
+                
+                column += Math.round(pixelDist / pixelLongitudeDistanceKms);
+            }
+            // find the next possible row
+            row += Math.round(pixelDist / pixelLatitudeDistanceKms);
         }
 
+        // End City placement method
+        
         int regionCount = oceanRegionCount + terrainRegionCount;
 
         if (terrestrialPixelsCount > 0 && terrainRegionCount == 0)
@@ -81,11 +129,11 @@ public class RegionGenerator
         System.out.println("Creating " + regionCount + " regions...");
 
         // we have a grid of regions established, now they need to "grow". ensure we stop at rivers and heights
-        regions = generationPass(regions, width, height, data, seaLevel, rivers, 0.125, true, true, seed);
+        regions = generationPass(regions, width, height, data, seaLevel, rivers, 0.025, false, true, seed);
         // cleanup any little dangles, grow into any double-river spaces
-        regions = generationPass(regions, width, height, data, seaLevel, rivers, 1.0, false, true, seed);
+        regions = generationPass(regions, width, height, data, seaLevel, rivers, 0.125, false, true, seed);
         // regions are now defined, but there may be some leftover space that isn't assigned yet, particularly random islands
-        // if an island is close to another region, it'll "merge" with it. if there isn't any region nearby (at least 10 pixels)
+        // if an island is close to another region, it'll "merge" with it. if there isn't any region nearby (at least 15 pixels)
         // a new region will be created
         for (int x = 0; x < width; x++)
         {
@@ -102,7 +150,7 @@ public class RegionGenerator
                     } 
                     else
                     {
-                        Point closestRegionPoint = getClosestRegionPoint(regions, data, new Point(x, y), seaLevel, width / 1000 > 10 ? width / 1000 : 10);
+                        Point closestRegionPoint = getClosestRegionPoint(regions, data, new Point(x, y), seaLevel, bbox, width / 500 > 15 ? width / 500 : 15);
                         if (closestRegionPoint != null)
                         {
                             int region = regions[closestRegionPoint.getX()][closestRegionPoint.getY()];
@@ -173,6 +221,8 @@ public class RegionGenerator
                                         if (difference < heightTolerance)
                                         {
                                             tempRegions[p.getX()][p.getY()] = regions[x][y];
+                                            // depending on the latitude, this should spread faster.
+                                            // north/south should spread much more than equitorial regions.
                                             regionGrowth++;
                                         }
                                     }
@@ -197,8 +247,9 @@ public class RegionGenerator
 
         return regions;
     }
-
-    private static Point getClosestRegionPoint(int[][] regionData, double[][] noiseData, Point point, double sealLevel, int tolerance)
+   
+    // technically, 'regionData' can be overloaded with any data that uses an int... so rivers, etc...
+    private static Point getClosestRegionPoint(int[][] regionData, double[][] noiseData, Point point, double seaLevel, Envelope bbox, int tolerance)
     {
         Point destination = null;
         boolean foundRegion = false;
@@ -212,32 +263,67 @@ public class RegionGenerator
             if (loops > tolerance)
                 break; // we've been searching for a while and never found a destination?
 
-            for (int y = point.getY() - loops; y < point.getY() + loops && y < height - 1; y++)
+            List<Point> possibleLocations = new ArrayList<Point>();
+            
+            List<Point> circlePoints = new ArrayList<Point>();
+            int angleInDegrees = 0;
+            
+            while(angleInDegrees <= 360)
             {
-                for (int x = point.getX() - loops; x < point.getX() + loops && x < width - 1; x++)
+                // loops + 2 for radius, so you don't start at your inner point
+                int x = (int) Math.round(((loops + 2) * Math.cos(angleInDegrees * Math.PI / 180F)) + point.getX());
+                int y = (int) Math.round(((loops + 2) * Math.sin(angleInDegrees * Math.PI / 180F)) + point.getY());
+
+                circlePoints.add(new Point(x, y));
+                int ang = Math.round((90 / (loops + 1)));
+                angleInDegrees += ang <=0 ? 1 : ang;
+            }
+            
+            for(Point p : circlePoints)
+            {
+                int x = p.getX();
+                int y = p.getY();
+                // make sure we're within array bounds
+                if (x < 0)
+                    x = 0;
+                if (x >= width - 1)
+                    x = width - 1;
+                if (y < 0)
+                    y = 0;
+                if (y >= height - 1)
+                    y = height - 1;
+
+                if (regionData[x][y] != 0 && noiseData[x][y] > seaLevel)
                 {
-                    // make sure we're within array bounds
-                    if (x < 0)
-                        x = 0;
-                    if (x >= width - 1)
-                        x = width - 1;
-                    if (y < 0)
-                        y = 0;
-                    if (y >= height - 1)
-                        y = height - 1;
-
-                    if (regionData[x][y] != 0 && noiseData[x][y] > sealLevel)
-                    {
-                        destination = new Point(x, y);
-                        foundRegion = true;
-                        break;
-                    }
-
-                    if (y > point.getY() - loops && y < point.getY() + loops - 1)
-                    {
-                        x = point.getX() + loops;
-                    }
+                    possibleLocations.add(new Point(x, y));
                 }
+
+                if (y > point.getY() - loops && y < point.getY() + loops - 1)
+                {
+                    x = point.getX() + loops;
+                }
+            }
+            
+            // all of the possible closest region points. 
+            // find the actual closest...
+            if(possibleLocations.size() > 0)
+            {
+                destination = null;
+                double closestDistance = 0;
+                
+                for(Point p : possibleLocations)
+                {
+                    Coordinate c1 = SpatialUtilities.pixelsToLatLong(point, width, height, bbox);
+                    Coordinate c2 = SpatialUtilities.pixelsToLatLong(p, width, height, bbox);
+                    
+                    double pixelDistance = SpatialUtilities.haversineDistance(c1, c2) / 1000;
+                    
+                    if(destination == null || pixelDistance < closestDistance)
+                    {
+                        destination = p;
+                        closestDistance = pixelDistance;
+                    }
+                }             
             }
 
             loops++;

@@ -106,7 +106,7 @@ public class Painter
                     noiseValue = 0;
 
                 // terrain painter
-                if (noiseValue < seaLevel || rivers[x][y] == 1)
+                if (noiseValue < seaLevel || rivers[x][y] != 0)
                 {
                     Color c = new Color(153, 217, 242, 255);
                     if (shadeWater)
@@ -116,7 +116,7 @@ public class Painter
                     }
 
                     mapImage.setRGB(x, y, c.getRGB());
-                } 
+                }
                 else
                 {
                     Color c = PainterUtilities.gradient(new Color(0, 102, 0, 255), new Color(220, 220, 220, 255), noiseValue);
@@ -152,7 +152,7 @@ public class Painter
                     noiseValue = 0;
 
                 // terrain painter
-                if ((noiseValue < seaLevel || rivers[x][y] == 1) && biomes[x][y] != 1)
+                if ((noiseValue < seaLevel || rivers[x][y] != 0) && biomes[x][y] != 1)
                 {
                     Color c = new Color(153, 217, 242, 255);
                     if (shadeWater)

@@ -1,6 +1,7 @@
 package ca.dhlevi.libnoise;
 
 import ca.dhlevi.libnoise.paint.Painter;
+import ca.dhlevi.libnoise.spatial.Envelope;
 
 public class App
 {
@@ -18,6 +19,8 @@ public class App
 
         Module module = DefaultModules.getContinentNoise(seed);
 
+        Envelope bbox = new Envelope(Double.parseDouble(args[3]), Double.parseDouble(args[4]), Double.parseDouble(args[5]), Double.parseDouble(args[6]));
+        
         long startTime = System.currentTimeMillis();
         System.out.println("Generating initial noise...");
         double[][] noise = NoiseFactory.generateSpherical(module, width + buffer, height + (buffer / 2), Double.parseDouble(args[3]), Double.parseDouble(args[4]), Double.parseDouble(args[5]), Double.parseDouble(args[6]), true, 1);
@@ -51,13 +54,13 @@ public class App
 
         startTime = System.currentTimeMillis();
         System.out.println("Creating river paths...");
-        int[][] riverData = RiverGenerator.createRiversAStar(noise, seaLevel, size, seed);
+        int[][] riverData = RiverGenerator.createRiversAStar(noise, basinData, null, seaLevel, size, false, bbox, 1, seed);
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
         startTime = System.currentTimeMillis();
         System.out.println("Generating regions...");
-        int[][] regionData = RegionGenerator.generateRegions(noise, basinData, riverData, seaLevel, 30, 30, seed);
+        int[][] regionData = RegionGenerator.generateRegions(noise, basinData, riverData, seaLevel, 30, 30, bbox, seed);
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 

@@ -47,23 +47,25 @@ public class AppTest extends TestCase
     public void testApp() throws Exception
     {
         long processStartTime = System.currentTimeMillis();
-        boolean reproject = true;
-        int seed = 88978728;
+        boolean reproject = false;
+        // -2147483648 to 2147483648 (make a cap so we can ensure seed +/- functions still work.
+        // maybe -2147483000 to 2147483000
+        int seed = 9988565; 
 
         System.out.println("Starting generation. Seed is: " + seed + "...");
 
-        int size = 4000;
+        int size = 1000;
         int width = size;
         int height = size / 2;
-        int buffer = 0;
-        double seaLevel = 0.25;
+        int buffer = 6;
+        double seaLevel = 0.3;
 
-        double minY = -90;
-        double maxY = 90;
-        double minX = -180;
-        double maxX = 180;
+        double minY = -67;
+        double maxY = -22;
+        double minX = -10;
+        double maxX = 80;
         
-        if(reproject) // reprojection currently doesn't work on bbox elements, need to add that in!
+        if(reproject) // reprojection currently doesn't work on bbox elements and must be global, need to add that in!
         {
             minY = -90;
             maxY = 90;
@@ -80,7 +82,7 @@ public class AppTest extends TestCase
         double[][] noise = NoiseFactory.generateSpherical(module, width + buffer, height + (buffer / 2), minY, maxY, minX, maxX, true, 1);
         long endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
-
+        
         if(reproject)
         {
             startTime = System.currentTimeMillis();
@@ -137,31 +139,33 @@ public class AppTest extends TestCase
 
         startTime = System.currentTimeMillis();
         System.out.println("Noise normalizing...");
-        NoiseNormalizer.Normalize(noise, seaLevel);
+        NoiseNormalizer.normalize(noise, seaLevel);
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
         startTime = System.currentTimeMillis();
         System.out.println("Basin detection...");
-        int[][] basinData = NoiseNormalizer.DetectBasins(noise, (int) Math.round(width * 0.5), seaLevel, false, false, seed);
+        int[][] basinData = NoiseNormalizer.detectBasins(noise, (int) Math.round(width * 0.5), seaLevel, false, false, seed);
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
         startTime = System.currentTimeMillis();
         System.out.println("Creating river paths...");
-        int[][] riverData = RiverGenerator.createRiversAStar(noise, seaLevel, size, seed);
+        int[][] riverData = RiverGenerator.createRiversAStar(noise, basinData, null, seaLevel, size / 100, false, bbox, 1, seed);
+        riverData = RiverGenerator.createRiversAStar(noise, basinData, riverData, seaLevel, size / 20, true, bbox, 2, seed + 1);
+        riverData = RiverGenerator.createRiversAStar(noise, basinData, riverData, seaLevel, size / 100, true, bbox, 3, seed + 2);
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
         startTime = System.currentTimeMillis();
         System.out.println("Generating regions...");
-        int[][] regionData = RegionGenerator.generateRegions(noise, basinData, riverData, seaLevel, 40, 40, seed);
+        int[][] regionData = RegionGenerator.generateRegions(noise, basinData, riverData, seaLevel, 60, 50, bbox, seed);
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
         startTime = System.currentTimeMillis();
         System.out.println("Generating biomes...");
-        int[][] biomeData = BiomeGenerator.generateBiomes(noise, riverData, basinData, bbox, seaLevel, 0.0, 0.0, seed);
+        int[][] biomeData = BiomeGenerator.generateBiomes(noise, riverData, basinData, bbox, seaLevel, -10.0, 0.0, seed);
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
 
@@ -211,7 +215,7 @@ public class AppTest extends TestCase
         assertTrue(Painter.paintBiomeMap(noise, riverData, biomeData, seaLevel, "c:/test/", true, false));
 
         Painter.paintTempuratureBands(noise, BiomeGenerator.MAX_TEMP, "c:/test/", new Envelope(minX, minY, maxX, maxY));
-
+        
         endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
         

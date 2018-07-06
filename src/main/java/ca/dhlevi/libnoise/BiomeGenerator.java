@@ -120,7 +120,7 @@ public class BiomeGenerator
             for (int y = 0; y < height; y++)
             {
                 double gain = 0;
-                if (rivers[x][y] == 1)
+                if (rivers[x][y] >= 1)
                     gain = 1.0;
                 else if (data[x][y] <= seaLevel)
                     gain = 1.0;

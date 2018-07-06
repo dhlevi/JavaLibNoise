@@ -1,7 +1,6 @@
 package ca.dhlevi.libnoise.spatial;
 
 import java.util.List;
-
 import ca.dhlevi.libnoise.Point;
 
 public class SpatialUtilities
@@ -58,7 +57,7 @@ public class SpatialUtilities
         return new Point(lon, lat);
     }
 
-    // reproject a lon lat to mercator projection X Y
+    // reproject a lon lat to mercator projection X Y    
     public static Coordinate MercatorProjection(int width, int height, Coordinate coord, Envelope bbox)
     {
         double long1 = bbox.getMinX() + 180.0;
@@ -73,11 +72,11 @@ public class SpatialUtilities
         double pixelsPerUnitLat = height / latUnits;
         
         // get x value
-        double x = (coord.getX() + 180.0) * (width / longUnits);
+        double x = (coord.getX() + 180.0) * pixelsPerUnitLong;
 
         // convert from degrees to radians
         double latRad = degreesToRadians(coord.getY());
-
+        
         // get y value
         double mercN = Math.log(Math.tan((Math.PI / 4.0) + (latRad / 2.0)));
         double y = (height / 2.0) - (width * mercN / (2.0 * Math.PI));
@@ -118,4 +117,27 @@ public class SpatialUtilities
 
         return new Coordinate(lon, lat);
     }
+    
+    public static final double RADIUS = 6372800;
+    public static double haversineDistance(Coordinate coord1, Coordinate coord2)
+    {
+        return haversineDistance(coord1.getY(), coord1.getX(), coord2.getY(), coord2.getX());
+    }
+    
+    // https://rosettacode.org/wiki/Haversine_formula#Groovy
+    // haversine(36.12, -86.67, 33.94, -118.40)
+    // result: 2887.25995060711 (kms)
+    public static double haversineDistance(double lat1, double lon1, double lat2, double lon2) 
+    {
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+    
+        lat1 = Math.toRadians(lat1);
+        lat2 = Math.toRadians(lat2);
+ 
+        double a = Math.pow(Math.sin(dLat / 2),2) + Math.pow(Math.sin(dLon / 2),2) * Math.cos(lat1) * Math.cos(lat2);
+        double c = 2 * Math.asin(Math.sqrt(a));
+        
+        return RADIUS * c; // return distance in metres?
+    }    
 }
