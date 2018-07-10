@@ -414,7 +414,7 @@ public class RiverGenerator
                 circlePoints.add(new Point(x, y));
                 int ang = Math.round((90 / (loops + 1)));
                 
-                angleInDegrees += ang <=0 ? 1 : ang;
+                angleInDegrees += ang <= 0 ? 1 : ang;
             }
             
             for(Point p : circlePoints)

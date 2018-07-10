@@ -73,7 +73,7 @@ public class RegionGenerator
         int cityLevel = 5; // 1 = hamlet (16km apart), 5 = village, 10 = town, 15 = city, 20 = global centre
         int pixelDist = 16 * cityLevel;
         int row = 0;
-        while(row < data[0].length)
+        while(row < data[0].length - 1)
         {
             Coordinate c1 = SpatialUtilities.pixelsToLatLong(new Point(0, row), width, height, bbox);
             Coordinate c2 = SpatialUtilities.pixelsToLatLong(new Point(1, row), width, height, bbox);
@@ -84,7 +84,7 @@ public class RegionGenerator
             
             // we have distances. Place points across this row at 16km distances.
             int column = 0;
-            while(column < data.length)
+            while(column < data.length - 1)
             {
                 // drop a region if not on a river, ocean, or at a height
                 if(rivers[column][row] < 1 && data[column][row] > seaLevel && data[column][row] < 0.8)
@@ -99,10 +99,12 @@ public class RegionGenerator
                     regions[column][row] = terrainRegionCount + oceanRegionCount;
                 }
                 
-                column += Math.round(pixelDist / pixelLongitudeDistanceKms);
+                double colCalc = Math.round(pixelDist / pixelLongitudeDistanceKms);
+                column += colCalc <= 0 ? 1 : colCalc;
             }
             // find the next possible row
-            row += Math.round(pixelDist / pixelLatitudeDistanceKms);
+            double rowCalc = Math.round(pixelDist / pixelLatitudeDistanceKms);
+            row += rowCalc <= 0 ? 1 : rowCalc;
         }
 
         // End City placement method
@@ -248,7 +250,7 @@ public class RegionGenerator
         return regions;
     }
    
-    // technically, 'regionData' can be overloaded with any data that uses an int... so rivers, etc...
+    // technically, 'regionData' can be overloaded with any data that uses an int... so rivers, etc..?
     private static Point getClosestRegionPoint(int[][] regionData, double[][] noiseData, Point point, double seaLevel, Envelope bbox, int tolerance)
     {
         Point destination = null;
@@ -266,7 +268,7 @@ public class RegionGenerator
             List<Point> possibleLocations = new ArrayList<Point>();
             
             List<Point> circlePoints = new ArrayList<Point>();
-            int angleInDegrees = 0;
+            double angleInDegrees = 0;
             
             while(angleInDegrees <= 360)
             {
@@ -275,8 +277,7 @@ public class RegionGenerator
                 int y = (int) Math.round(((loops + 2) * Math.sin(angleInDegrees * Math.PI / 180F)) + point.getY());
 
                 circlePoints.add(new Point(x, y));
-                int ang = Math.round((90 / (loops + 1)));
-                angleInDegrees += ang <=0 ? 1 : ang;
+                angleInDegrees += Math.round((90 / (loops + 1)));
             }
             
             for(Point p : circlePoints)
