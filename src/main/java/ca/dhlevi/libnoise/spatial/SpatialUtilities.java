@@ -53,6 +53,8 @@ public class SpatialUtilities
 
         int lon = (int) Math.round((latLon.getX() + 180.0) * pixelsPerUnitLong);
         int lat = (int) Math.round((latLon.getY() +  90.0) * pixelsPerUnitLat);
+        // int lon = (int) Math.floor((((long1 - 180) - latLon.getX()) / pixelsPerUnitLong) * -1);
+        // int lat = (int) Math.floor((((lat1 - 90) - latLon.getY()) / pixelsPerUnitLat) * -1);
 
         return new Point(lon, lat);
     }
