@@ -23,7 +23,7 @@ public class App
         
         long startTime = System.currentTimeMillis();
         System.out.println("Generating initial noise...");
-        double[][] noise = NoiseFactory.generateSpherical(module, width + buffer, height + (buffer / 2), Double.parseDouble(args[3]), Double.parseDouble(args[4]), Double.parseDouble(args[5]), Double.parseDouble(args[6]), true, 1);
+        double[][] noise = NoiseFactory.generateSpherical(module, width + buffer, height + (buffer / 2), bbox.getMinY(), bbox.getMaxY(), bbox.getMinX(), bbox.getMaxX(), true, 1);
 
         long endTime = System.currentTimeMillis();
         System.out.println("Complete: " + ((endTime - startTime) / 1000) + " seconds");
